@@ -1,3 +1,11 @@
+# Use of ".data" explained here: 
+# https://www.r-bloggers.com/no-visible-binding-for-global-variable/
+
+# Where it is not possible or desireable to use explicit :: for functions,
+# include an @importFrom to avoid R package build check complaining
+# Tip sourced from: 
+# https://stackoverflow.com/questions/58026637/no-visible-global-function-definition-for
+
 #' @importFrom dplyr %>%
 #' @importFrom rlang .data
 allocation_vars_template <- function(obj) {
