@@ -6,10 +6,17 @@
 #' optimisation.
 #' 
 #' @param obj jwmodel object to be initialised
+#' @return Returns an object of type \code{jwmodel}
+#' @export
+#' @examples 
+#' \dontrun{
+#' mymodel <- initialise(mymodel)
+#' }
 initialise <- function(obj) {
   UseMethod("initialise")
 }
 
+#' @export
 initialise.default <- function(obj) {
   cat("'initialise' function can only be used on jwmodel objects")
 }
@@ -18,6 +25,7 @@ initialise.default <- function(obj) {
 # and all constraints; loads them into an lpSolveAPI object ready to optimise
 #' @importFrom rlang .data
 #' @importFrom  utils head
+#' @export
 initialise.jwmodel <- function(obj) {
   
   n_years <- nrow(obj$years)

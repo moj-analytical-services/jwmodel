@@ -9,7 +9,15 @@ optimise(obj)
 \arguments{
 \item{obj}{jwmodel object to be optimised}
 }
+\value{
+Returns an object of type \code{jwmodel}
+}
 \description{
 Requires the jwmodel to be initialised. Executes the LP optimisation and
 rights results into the jwmodel object which is returned.
+}
+\examples{
+\dontrun{
+mymodel <- optimise(mymodel)
+}
 }

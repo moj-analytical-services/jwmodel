@@ -5,7 +5,12 @@
 #' rights results into the jwmodel object which is returned.
 #' 
 #' @param obj jwmodel object to be optimised
-# generic function definition
+#' @return Returns an object of type \code{jwmodel}
+#' @export
+#' @examples 
+#' \dontrun{
+#' mymodel <- optimise(mymodel)
+#' }
 optimise <- function(obj) {
   UseMethod("optimise")
 }

@@ -8,7 +8,7 @@
 #' @param filepath a string giving the full filepath name of the Excel file
 #'        containing the parameter information to be loaded
 #' 
-#' @return Returns an object of type \code{lpmodel}
+#' @return Returns an object of type \code{jwmodel}
 #' @export
 #' @examples 
 #' \dontrun{

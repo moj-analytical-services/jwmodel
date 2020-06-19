@@ -13,7 +13,7 @@ load_from_file(obj, filepath)
 containing the parameter information to be loaded}
 }
 \value{
-Returns an object of type \code{lpmodel}
+Returns an object of type \code{jwmodel}
 }
 \description{
 Loads data from the specified Excel file into a jwmodel object, priming it

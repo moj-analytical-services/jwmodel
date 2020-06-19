@@ -1,13 +1,39 @@
-
-# generic function definition
+#' Runs simulation on an optimised jwmodel
+#' 
+#' An optimised jwmodel contains a recommended hiring profile as output. Running 
+#' a simulation means taking this hiring profile (and hence future total judicial 
+#' staff WTE) as fixed, and simulating variations in demand. In each alternate 
+#' demand scenario, allocation of judges to jursidictions is still optimised, but
+#' no alternations to overall headcount are made. 
+#' 
+#' The simulation creates a user-defined number of alternative demand scenarios 
+#' centered around the original expected demand, but varying to account for:
+#' random variation; uncertainty in underlying demand growth; random chances of 
+#' a step-change in demand (e.g. as a result of legislative change).
+#' 
+#' @param obj jwmodel object to be subject to simulation
+#' @param iterations (optional) integer specifying the total number of demand 
+#' scenarios to be simulated; defaults to 100
+#' @param seed_num (optional) integer to be used as the seed for the random 
+#' number generator which underpins generation of demand scenarios. Specify if 
+#' you want to re-run a simulation with the same range of demand scenarios. 
+#' 
+#' @return Returns an object of type \code{jwmodel}
+#' @export
+#' @examples 
+#' \dontrun{
+#' mymodel <- simulate(mymodel, 10000)
+#' }
 simulate <- function(obj, iterations, seed_num) {
   UseMethod("simulate")
 }
 
+#' @export
 simulate.default <- function(obj, iterations, seed_num) {
   cat("'simulate' function can only be used on jwmodel objects")
 }
 
+#' @export
 simulate.jwmodel <- function(obj, iterations = 100, seed_num = NULL) {
   
   # set & record random generator's seed number (for reproducability)

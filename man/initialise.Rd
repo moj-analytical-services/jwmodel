@@ -9,8 +9,16 @@ initialise(obj)
 \arguments{
 \item{obj}{jwmodel object to be initialised}
 }
+\value{
+Returns an object of type \code{jwmodel}
+}
 \description{
 Once a jwmodel object has been loaded with all the necessary parameter
 information, it must be initialised with this function to ready it for 
 optimisation.
+}
+\examples{
+\dontrun{
+mymodel <- initialise(mymodel)
+}
 }
