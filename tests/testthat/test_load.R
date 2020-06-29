@@ -12,5 +12,3 @@ test_that("file loads without warnings", {
   expect_silent(myobj <- jwmodel::jwmodel())
   expect_silent(jwmodel::load_from_file(myobj, filepath))
 })
-
-# TODO ADD MORE TESTS
