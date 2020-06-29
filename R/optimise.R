@@ -15,11 +15,13 @@ optimise <- function(obj) {
   UseMethod("optimise")
 }
 
+#' @export
 optimise.default <- function(obj) {
   cat("'optimise' function can only be used on jwmodel objects")
 }
 
 #' @importFrom rlang .data
+#' @export
 optimise.jwmodel <- function(obj) {
   if (is.null(obj$lpmodel)) {
     initialise(obj)
