@@ -4,13 +4,23 @@
 \alias{jwmodel}
 \title{Creates a jwmodel object}
 \usage{
-jwmodel(metadata = list(name = "", description = ""),
-  judge_types = data.frame(), jurisdictions = c(), years = c(),
-  n_judges = data.frame(), judge_departures = data.frame(),
-  sitting_days = data.frame(), demand = data.frame(),
-  judge_progression = data.frame(), fixed_costs = data.frame(),
-  variable_costs = data.frame(), penalty_costs = data.frame(),
-  constraints = list(), outputs = list(), lpmodel = NULL)
+jwmodel(
+  metadata = list(name = "", description = ""),
+  judge_types = data.frame(),
+  jurisdictions = c(),
+  years = c(),
+  n_judges = data.frame(),
+  judge_departures = data.frame(),
+  sitting_days = data.frame(),
+  demand = data.frame(),
+  judge_progression = data.frame(),
+  fixed_costs = data.frame(),
+  variable_costs = data.frame(),
+  penalty_costs = data.frame(),
+  constraints = list(),
+  outputs = list(),
+  lpmodel = NULL
+)
 }
 \arguments{
 \item{metadata}{extendable named list of model metadata, includes model 'name'
