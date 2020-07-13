@@ -43,3 +43,4 @@ packrat/lib*/
 
 # temp working test file
 *scratch.R
+*test.xlsx
