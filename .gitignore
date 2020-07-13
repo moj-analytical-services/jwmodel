@@ -40,3 +40,6 @@ vignettes/*.pdf
 .Renviron
 packrat/lib*/
 .Rproj.user
+
+# temp working test file
+*scratch.R
