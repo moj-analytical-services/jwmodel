@@ -308,6 +308,7 @@ initialise.jwmodel <- function(obj) {
   lpSolveAPI::set.bounds(lp.wmodel, upper = ubounds, columns = indices)
   
   ##### Judges must work a minimum number of sitting days each #####
+  # Ref EQ-007
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$sitting_days, 
@@ -345,6 +346,7 @@ initialise.jwmodel <- function(obj) {
   obj$constraints$mindays <- c(start_row:end_row)
   
   ##### Contrain the maximum number of Judges recruited in one year #####
+  # Ref EQ-008
   df <- resource_vars
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
