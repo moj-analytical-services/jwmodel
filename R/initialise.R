@@ -347,13 +347,11 @@ initialise.jwmodel <- function(obj) {
   
   ##### Constrain the maximum number of Judges recruited in one year #####
   # Ref EQ-008
-  df <- resource_vars %>%
-    dplyr::left_join(obj$recruit_limits, 
-                     by = c("Judge" = "Judge Type", "Year" = "Year"))
+  df <- resource_vars
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
   
-  # TODO edit here to use different "shortfall" scenario
+  # TODO edit here to use different "shortfall" scenario (3 = baseline scenario)
   scenario_col <- 3
   
   for (y in levels(obj$years$Years)) {
