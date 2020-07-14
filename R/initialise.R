@@ -345,13 +345,16 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$mindays <- c(start_row:end_row)
   
-  ##### Contrain the maximum number of Judges recruited in one year #####
+  ##### Constrain the maximum number of Judges recruited in one year #####
   # Ref EQ-008
-  df <- resource_vars
+  df <- resource_vars %>%
+    dplyr::left_join(obj$recruit_limits, 
+                     by = c("Judge" = "Judge Type", "Year" = "Year"))
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
   
-  max_hires <- 50 ### TODO un-hard code
+  # TODO edit here to use different "shortfall" scenario
+  scenario_col <- 3
   
   for (y in levels(obj$years$Years)) {
     for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
@@ -359,8 +362,14 @@ initialise.jwmodel <- function(obj) {
       indices <- which(df$Year == y & df$Judge == t) + nrow(allocation_vars)
       coeffs <- c(0, 1, 0)
       
+      RHS <- obj$recruit_limits[
+        obj$recruit_limits$`Judge Type` == t &
+          obj$recruit_limits$Year == y,
+        scenario_col
+        ]
+      
       lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                 type = "<=", rhs = max_hires)
+                                 type = "<=", rhs = RHS)
     }
   }
   
