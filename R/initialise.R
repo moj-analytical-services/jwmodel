@@ -375,6 +375,51 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$recruitcap <- c(start_row:end_row)
   
+  ##### Set limits on the proportion of demand allocated to differnt types of judge #####
+  ## this currently only implements 'minimum' proportions ##
+  
+  # Ref EQ-009
+  df <- allocation_vars %>%
+    dplyr::left_join(obj$alloc_limits, 
+                     by = c("Judge", "Jurisdiction")) %>%
+    tidyr::replace_na(list(MinPct = 0, MaxPct = 0))
+
+  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
+  
+  scenario_col <- 3 # TODO replace hard-coding (col 3 = baseline demand)
+  
+  for (y in levels(obj$years$Years)) {
+    for (j in levels(obj$jurisdictions$Jurisdiction)) {
+      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+  
+        indices <- which(df$Year == y & df$Jurisdiction == j & df$Judge == t)
+        coeffs <- obj$sitting_days[
+          obj$sitting_days$Year == y & obj$sitting_days$`Judge Type` == t,
+          3 # `Avg Sitting Days`
+        ]
+        
+        MinProportion <- df[
+          df$Judge == t & df$Year == y & df$Jurisdiction == j,
+          4 # MinPct
+          ] %>% as.numeric()
+        
+        Demand <- obj$demand [
+          obj$demand$Jurisdiction == j & obj$demand$Year == y,
+          scenario_col
+        ] %>% as.numeric()
+        
+        RHS <- c(MinProportion * Demand)
+  
+        lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
+                                   type = ">=", rhs = RHS)
+      }
+    }
+  }
+
+  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
+
+  obj$constraints$recruitcap <- c(start_row:end_row)
+  
   ##### update model #####
   obj$lpmodel <- lp.wmodel
   
