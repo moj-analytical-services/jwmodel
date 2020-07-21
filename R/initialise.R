@@ -403,15 +403,31 @@ initialise.jwmodel <- function(obj) {
           4 # MinPct
           ] %>% as.numeric()
         
+        MaxProportion <- df[
+          df$Judge == t & df$Year == y & df$Jurisdiction == j,
+          5 # MinPct
+          ] %>% as.numeric()
+        
         Demand <- obj$demand [
           obj$demand$Jurisdiction == j & obj$demand$Year == y,
           scenario_col
         ] %>% as.numeric()
         
-        RHS <- c(MinProportion * Demand)
-  
-        lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                   type = ">=", rhs = RHS)
+        # apply minimums (EQ-009a)
+        if (MinProportion > 0 & MinProportion <=1 ) {
+          RHS <- c(MinProportion * Demand)
+    
+          lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
+                                     type = ">=", rhs = RHS)
+        }
+        
+        # apply maximums (EQ-009b)
+        if (MaxProportion > 0 & MaxProportion < 1) {
+          RHS <- c(MaxProportion * Demand)
+          
+          lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
+                                     type = "<=", rhs = RHS)
+        }
       }
     }
   }
