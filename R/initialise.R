@@ -294,11 +294,13 @@ initialise.jwmodel <- function(obj) {
   # Ref EQ-006
   
   df <- allocation_vars %>%
-    dplyr::left_join(obj$variable_costs, by = c("Judge", "Jurisdiction")) %>%
+    dplyr::left_join(obj$alloc_limits,
+                     by = c("Judge", "Jurisdiction")) %>%
+    tidyr::replace_na(list(MaxPct = 0)) %>%
     dplyr::mutate(exclude = dplyr::case_when(
       .data$Judge == "U" ~ FALSE,
-      !is.na(.data$`Avg Sitting Day Cost`) ~ FALSE,
-      TRUE ~ TRUE
+      .data$MaxPct <= 0 ~ TRUE,
+      TRUE ~ FALSE
     ))
   
   indices <- which(df$exclude)
@@ -308,6 +310,7 @@ initialise.jwmodel <- function(obj) {
   lpSolveAPI::set.bounds(lp.wmodel, upper = ubounds, columns = indices)
   
   ##### Judges must work a minimum number of sitting days each #####
+  # Ref EQ-007
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$sitting_days, 
@@ -344,12 +347,14 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$mindays <- c(start_row:end_row)
   
-  ##### Contrain the maximum number of Judges recruited in one year #####
+  ##### Constrain the maximum number of Judges recruited in one year #####
+  # Ref EQ-008
   df <- resource_vars
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
   
-  max_hires <- 50 ### TODO un-hard code
+  # TODO edit here to use different "shortfall" scenario (3 = baseline scenario)
+  scenario_col <- 3
   
   for (y in levels(obj$years$Years)) {
     for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
@@ -357,13 +362,80 @@ initialise.jwmodel <- function(obj) {
       indices <- which(df$Year == y & df$Judge == t) + nrow(allocation_vars)
       coeffs <- c(0, 1, 0)
       
+      RHS <- obj$recruit_limits[
+        obj$recruit_limits$`Judge Type` == t &
+          obj$recruit_limits$Year == y,
+        scenario_col
+        ]
+      
       lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                 type = "<=", rhs = max_hires)
+                                 type = "<=", rhs = RHS)
     }
   }
   
   end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
   
+  obj$constraints$recruitcap <- c(start_row:end_row)
+  
+  ##### Set limits on the proportion of demand allocated to differnt types of judge #####
+  ## this currently only implements 'minimum' proportions ##
+  
+  # Ref EQ-009
+  df <- allocation_vars %>%
+    dplyr::left_join(obj$alloc_limits, 
+                     by = c("Judge", "Jurisdiction")) %>%
+    tidyr::replace_na(list(MinPct = 0, MaxPct = 0))
+
+  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
+  
+  scenario_col <- 3 # TODO replace hard-coding (col 3 = baseline demand)
+  
+  for (y in levels(obj$years$Years)) {
+    for (j in levels(obj$jurisdictions$Jurisdiction)) {
+      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+  
+        indices <- which(df$Year == y & df$Jurisdiction == j & df$Judge == t)
+        coeffs <- obj$sitting_days[
+          obj$sitting_days$Year == y & obj$sitting_days$`Judge Type` == t,
+          3 # `Avg Sitting Days`
+        ]
+        
+        MinProportion <- df[
+          df$Judge == t & df$Year == y & df$Jurisdiction == j,
+          4 # MinPct
+          ] %>% as.numeric()
+        
+        MaxProportion <- df[
+          df$Judge == t & df$Year == y & df$Jurisdiction == j,
+          5 # MinPct
+          ] %>% as.numeric()
+        
+        Demand <- obj$demand [
+          obj$demand$Jurisdiction == j & obj$demand$Year == y,
+          scenario_col
+        ] %>% as.numeric()
+        
+        # apply minimums (EQ-009a)
+        if (MinProportion > 0 & MinProportion <=1 ) {
+          RHS <- c(MinProportion * Demand)
+    
+          lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
+                                     type = ">=", rhs = RHS)
+        }
+        
+        # apply maximums (EQ-009b)
+        if (MaxProportion > 0 & MaxProportion < 1) {
+          RHS <- c(MaxProportion * Demand)
+          
+          lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
+                                     type = "<=", rhs = RHS)
+        }
+      }
+    }
+  }
+
+  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
+
   obj$constraints$recruitcap <- c(start_row:end_row)
   
   ##### update model #####

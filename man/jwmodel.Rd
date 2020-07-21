@@ -14,6 +14,8 @@ jwmodel(
   sitting_days = data.frame(),
   demand = data.frame(),
   judge_progression = data.frame(),
+  recruit_limits = data.frame(),
+  alloc_limits = data.frame(),
   fixed_costs = data.frame(),
   variable_costs = data.frame(),
   penalty_costs = data.frame(),
@@ -46,6 +48,13 @@ jurisdiction by year}
 
 \item{judge_progression}{data frame holding the mapping of the proportion of 
 judges of one type who are recruited from the pool of another type}
+
+\item{recruit_limits}{data frame holding upper bound constraints on the number 
+of judges who can be recruited in any given year}
+
+\item{alloc_limits}{data frame holding the max and min proportions of demand 
+which can or must (respectively) be met by a given judge type in a 
+given jurisdiction}
 
 \item{fixed_costs}{data frame... default empty}
 

@@ -29,9 +29,11 @@ load_from_file.jwmodel <- function(obj, filepath) {
   
   readxl::excel_sheets(filepath)
   
+  # the must-have list of worksheet names
   wslist <- c("Judge Types", "Jurisdictions", "Years", "Number of Judges", 
               "Expected Departures", "Sitting Day Capacity", "Baseline Demand",
-              "Judge Progression", "Fixed Costs", "Variable Costs")
+              "Judge Progression", "Fixed Costs", "Variable Costs",
+              "Recruitment Limits", "Allocation Limits")
   
   if (length(wslist) > length(wslist %in% readxl::excel_sheets(filepath))) {
     warning("Incomplete file: data not loaded")
@@ -95,6 +97,18 @@ load_from_file.jwmodel <- function(obj, filepath) {
   df$Judge <- factor(df$Judge, levels = judge_levels)
   df$Jurisdiction <- factor(df$Jurisdiction, levels = jurisdiction_levels)
   obj$variable_costs <- df
+  
+  # load recruitment limits data
+  df <- readxl::read_excel(filepath, sheet = wslist[11])
+  df$`Judge Type` <- factor(df$`Judge Type`, levels = judge_levels)
+  df$Year <- factor(df$Year, levels = year_levels)
+  obj$recruit_limits <- df
+  
+  # load allocation limits data
+  df <- readxl::read_excel(filepath, sheet = wslist[12])
+  df$Judge <- factor(df$Judge, levels = judge_levels)
+  df$Jurisdiction <- factor(df$Jurisdiction, levels = jurisdiction_levels)
+  obj$alloc_limits <- df
   
   if (c("Penalty Costs") %in% readxl::excel_sheets(filepath)) {
     # load penalty costs from file if they are defined there
