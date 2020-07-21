@@ -294,11 +294,13 @@ initialise.jwmodel <- function(obj) {
   # Ref EQ-006
   
   df <- allocation_vars %>%
-    dplyr::left_join(obj$variable_costs, by = c("Judge", "Jurisdiction")) %>%
+    dplyr::left_join(obj$alloc_limits,
+                     by = c("Judge", "Jurisdiction")) %>%
+    tidyr::replace_na(list(MaxPct = 0)) %>%
     dplyr::mutate(exclude = dplyr::case_when(
       .data$Judge == "U" ~ FALSE,
-      !is.na(.data$`Avg Sitting Day Cost`) ~ FALSE,
-      TRUE ~ TRUE
+      .data$MaxPct <= 0 ~ TRUE,
+      TRUE ~ FALSE
     ))
   
   indices <- which(df$exclude)
