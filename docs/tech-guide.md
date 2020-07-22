@@ -66,9 +66,18 @@ Total cost =
 
 Minimise:
 
-**EQ-000** | ![equation](./images/EQ000.png)
------------|-------------------------------
+**EQ-000** |   |![equation](./images/EQ000.png)
+-----------|---|----------------------------
+Where:     |   |  
+Cf/yjt     | = | Average cost of one sitting day (fees) for judge of type t in jurisdiction j in year y
+Syjt       | = | Number of sitting days a single judge of type t can provide for jurisdiction j in year y
+Ayjt       | = | Number of judges of type t allocated to provide sitting days for jurisdiction j in year y
+Cs/yt      | = | Average annual cost (salary) of judge of type t in year y
+Ryt        | = | Total number of judges of type t in post in year y
+Cu/yt      | = | Nominal per-sitting-day penalty associated with being unable to satisfy demand in juridiction j in year y
+Uyj        | = | Total number of sitting-days unallocated – i.e. to which no judge could be allocated – for jurisdiction j in year y 
 
-Where:
-
+This formulation does give the flexibility to specify a combination of variable 
+(fee) and fixed (salary) costs for a judge, should that be something desirable 
+to model in future.
 
