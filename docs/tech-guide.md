@@ -1,8 +1,8 @@
 # Technical Documentation
 
 ## INDEX  
-[Model Variable](tech-guide.md#model-variables)
-[Model Variable](#objective-function)
+* [Model Variable](#model-variables)  
+* [Objective Function](#objective-function)
 
 
 ## Model Variables
