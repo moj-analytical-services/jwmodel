@@ -1,5 +1,10 @@
 # Technical Documentation
 
+## INDEX  
+[Model Variable](tech-guide.md#model-variables)
+[Model Variable](#objective-function)
+
+
 ## Model Variables
 
 For this model we can categorise the variables given to the the optimiser as of 
