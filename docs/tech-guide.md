@@ -60,14 +60,14 @@ resource variables: 1,590 variables in total.
 The objective function is to minimise total cost, subject to the following definitions.
 
 Total cost =  
-a. [Sum of per sitting-day cost of fee-paid judges] + 
-b. [Sum of total cost of all salaried judges] + 
-c. [Sum of per-sitting day penalty costs for any unsatisfied demand]
+1. [Sum of per sitting-day cost of fee-paid judges] + 
+2. [Sum of total cost of all salaried judges] + 
+3. [Sum of per-sitting day penalty costs for any unsatisfied demand]
 
 Minimise:
 
-**EQ-000** | ![equation](/images/EQ000.png)
--------------------------------------------
+**EQ-000** | ![equation](./images/EQ000.png)
+-----------|-------------------------------
 
 Where:
 
