@@ -54,3 +54,21 @@ jurisdiction) in year 2.
 The real model follows the same pattern but is obviously larger. With 10 years, 
 15 jurisdictions and 8 judge types, there are 1,350 allocation variables and 240 
 resource variables: 1,590 variables in total.
+
+## Objective Function
+
+The objective function is to minimise total cost, subject to the following definitions.
+
+Total cost =  
+a. [Sum of per sitting-day cost of fee-paid judges] + 
+b. [Sum of total cost of all salaried judges] + 
+c. [Sum of per-sitting day penalty costs for any unsatisfied demand]
+
+Minimise:
+
+**EQ-000** | ![equation](/images/EQ000.png)
+-------------------------------------------
+
+Where:
+
+
