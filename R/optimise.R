@@ -69,9 +69,17 @@ optimise.jwmodel <- function(obj) {
     dplyr::mutate(Allocated = lpSolveAPI::get.variables(obj$lpmodel)[1:n_alloc]) %>%
     dplyr::inner_join(obj$variable_costs, by = c("Jurisdiction", "Judge")) %>%
     dplyr::inner_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
-    #select(-`Min Sitting Days`, -`Max Sitting Days`) %>%
+    dplyr::left_join(obj$judge_types, by = c("Judge" = "Judge Type")) %>%
     dplyr::mutate(`Total Sitting Days` = .data$Allocated * .data$`Avg Sitting Days`,
                   `Total Fee Cost` = .data$`Total Sitting Days` * .data$`Avg Sitting Day Cost`)
+  
+  # ensure Year, Jurisdiction and Judge variables are factors
+  allocation_output$Year <- factor(allocation_output$Year, 
+                                    levels = levels(obj$years$Years))
+  allocation_output$Jurisdiction <- factor(allocation_output$Jurisdiction, 
+                                    levels = levels(obj$jurisdictions$Jurisdiction))
+  allocation_output$Judge <- factor(allocation_output$Judge, 
+                                    levels = levels(obj$judge_types$`Judge Type`))
   
   obj$outputs$allocation_output <- allocation_output
   
