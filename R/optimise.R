@@ -94,6 +94,12 @@ optimise.jwmodel <- function(obj) {
     ) %>%
     dplyr::select(-.data$io)
   
+  # ensure Year and Judge variables are factors
+  resource_output$Year <- factor(resource_output$Year, 
+                                   levels = levels(obj$years$Years))
+  resource_output$Judge <- factor(resource_output$Judge, 
+                                    levels = levels(obj$judge_types$`Judge Type`))
+  
   obj$outputs$resource_output <- resource_output
   
   return(obj)
