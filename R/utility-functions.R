@@ -79,3 +79,33 @@ sim_growth_delta <- function(baseline, growthci = 0.01) {
     return(NULL)
 }
 
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+list_of_input_sheets <- function() {
+  
+  sheetnames <- c("Judge Types", "Jurisdictions", "Years", "Number of Judges", 
+                  "Expected Departures", "Sitting Day Capacity", "Baseline Demand",
+                  "Judge Progression", "Fixed Costs", "Variable Costs",
+                  "Recruitment Limits", "Allocation Limits", 
+                  "Penalty Costs", "Model Info")
+  
+  listnames <- c("judge_types", "jurisdictions", "years", "n_judges", 
+                 "judge_departures", "sitting_days", "demand",
+                 "judge_progression", "fixed_costs", "variable_costs",
+                 "recruit_limits", "alloc_limits", 
+                 "penalty_costs", "metadata")
+  
+  mandatory <- c(TRUE, TRUE, TRUE, TRUE, 
+                 TRUE, TRUE, TRUE,
+                 TRUE, TRUE, TRUE,
+                 TRUE, TRUE, 
+                 FALSE, TRUE)
+  
+  lookup <- dplyr::as_tibble(sheetnames) %>%
+    dplyr::bind_cols(dplyr::as_tibble(listnames)) %>%
+    dplyr::bind_cols(dplyr::as_tibble(mandatory))
+    
+    names(lookup) <- c("sheetnames", "listnames", "required")
+  
+  return(lookup)
+}
