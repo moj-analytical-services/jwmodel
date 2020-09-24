@@ -44,7 +44,7 @@ initialise.jwmodel <- function(obj) {
   ) %>%
     dplyr::arrange(.data$Year, .data$Jurisdiction, .data$Judge)
   
-  # generates corrctly ordered unique combos of Year/Judge Type/In-Out Status
+  # generates correctly ordered unique combos of Year/Judge Type/In-Out Status
   # for "Resource Variables", for use in dplyr joins
   # NB for In-Out Status (io), "E" = existing / in post, "I" = incoming,
   # "O" = outgoing
@@ -59,7 +59,7 @@ initialise.jwmodel <- function(obj) {
   # initialise model
   lp.wmodel <- lpSolveAPI::make.lp(0, n_vars)
   
-  # add bounds to prevent any variable taking a value less t han zero
+  # add bounds to prevent any variable taking a value less than zero
   lpSolveAPI::set.bounds(lp.wmodel, lower = rep(0, n_vars))
   
   # TODO check if these are now redundant
@@ -67,7 +67,7 @@ initialise.jwmodel <- function(obj) {
   index_types <- c(0:(n_types-1)) * 3
   i_resource_vars <- n_years * n_jurisdictions * (n_types + 1) + 1
   
-  ##### set Objective Function #####
+  ##### EQ-000 set Objective Function #####
   # Minimise total 'cost': ref EQ000
   
   # define variable cost (fees) coefficients: NB includes unallocated penalty costs
@@ -110,7 +110,7 @@ initialise.jwmodel <- function(obj) {
   # create objective function using calculated coefficients
   lpSolveAPI::set.objfn(lp.wmodel, obj = coeffs, indices = indices)
   
-  ##### Demand must be satisfied constraint #####
+  ##### EQ-002 Demand must be satisfied constraint #####
   # See Ref EQ-002b
   
   df <- allocation_vars %>%
@@ -143,8 +143,7 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$demand <- c(start_row:end_row)
   
-  ##### Cannot allocate more judges than available constraint #####
-  # Ref EQ-004
+  ##### EQ-004 Cannot allocate more judges than available constraint #####
   
   df <- allocation_vars %>%
     dplyr::mutate(coeff = dplyr::if_else(.data$Judge == "U", 0, 1))
@@ -176,10 +175,9 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$allocate <- c(start_row:end_row)
   
-  ##### In Post Judges constraint #####
-  # Ref EQ-001
+  ##### EQ-001 In Post Judges constraint #####
   
-  # contraint such that volume of judges in one year equals volume in previous
+  # constraint such that volume of judges in one year equals volume in previous
   # plus number recruited minus number leaving
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
@@ -232,11 +230,10 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$inpost <- c(start_row:end_row)
   
-  ##### Outgoing Judges constraint #####
+  ##### EQ-003 Outgoing Judges constraint #####
   
   # Number of judges leaving post in a given year is equal to the number leaving 
   # the profession + the number who are moving to a different role.
-  # See Ref EQ-003
   
   df_jp <- obj$judge_progression
   
@@ -286,12 +283,11 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$outgoing <- c(start_row:end_row)
   
-  ##### Judges only work in certain jurisdictions constraint ####
+  ##### EQ-006 Judges only work in certain jurisdictions constraint ####
   
   # Ensure allocation variables for invalid judge-jurisdiction combos = zero.
   # Uses set.bounds; could have also set as a single constraint (working in 
   # conjunction with existing lower bounds = 0)
-  # Ref EQ-006
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$alloc_limits,
@@ -309,8 +305,7 @@ initialise.jwmodel <- function(obj) {
   
   lpSolveAPI::set.bounds(lp.wmodel, upper = ubounds, columns = indices)
   
-  ##### Judges must work a minimum number of sitting days each #####
-  # Ref EQ-007
+  ##### EQ-007 Judges must work a minimum number of sitting days each #####
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$sitting_days, 
@@ -347,8 +342,8 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$mindays <- c(start_row:end_row)
   
-  ##### Constrain the maximum number of Judges recruited in one year #####
-  # Ref EQ-008
+  ##### EQ-008 Constrain the maximum number of Judges recruited in one year #####
+  
   df <- resource_vars
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
@@ -377,10 +372,9 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$recruitcap <- c(start_row:end_row)
   
-  ##### Set limits on the proportion of demand allocated to differnt types of judge #####
+  ##### EQ-009 Set limits on the proportion of demand allocated to different types of judge #####
   ## this currently only implements 'minimum' proportions ##
   
-  # Ref EQ-009
   df <- allocation_vars %>%
     dplyr::left_join(obj$alloc_limits, 
                      by = c("Judge", "Jurisdiction")) %>%
