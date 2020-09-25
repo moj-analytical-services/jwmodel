@@ -35,6 +35,22 @@ initialise.jwmodel <- function(obj) {
   n_vars <- (n_years * n_jurisdictions * (n_types + 1)) +
     (n_years * n_types * 3)
   
+  # identify user-selected demand scenario (from passed metadata),
+  # default = baseline = 3 (3rd column in 'baseline demand' table)
+  if (is.numeric(obj$metadata$demand_scenario)) {
+    selected_demand_scenario <- obj$metadata$demand_scenario + 2
+  } else {
+    selected_demand_scenario <- 3
+  }
+  
+  # identify user-selected max recruitment limit scenario (from passed metadata),
+  # default = column 3 in obj$recruit_limits tibble
+  if (is.numeric(obj$metadata$recruit_scenario)) {
+    selected_recruitment_scenario <- obj$metadata$recruit_scenario + 2
+  } else {
+    selected_recruitment_scenario <- 3
+  }
+  
   # generates correctly ordered unique combos of Year/Jurisdiction/Judge Type
   # for "Allocation Variables", for use in dplyr joins
   allocation_vars <- tidyr::expand_grid(
@@ -128,9 +144,10 @@ initialise.jwmodel <- function(obj) {
       indices <- which(df$Year == y & df$Jurisdiction == j)
       coeffs <- df$coeff[indices]
       
-      RHS <- obj$demand$`Sitting Days`[
-        obj$demand$Year == y & obj$demand$Jurisdiction == j
-        ]
+      RHS <- obj$demand[
+        obj$demand$Year == y & obj$demand$Jurisdiction == j,
+        selected_demand_scenario # user selected, default = baseline = 3
+        ] %>% as.numeric()
       
       lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
                                  type = '>=', rhs = RHS)
@@ -348,9 +365,6 @@ initialise.jwmodel <- function(obj) {
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
   
-  # TODO edit here to use different "shortfall" scenario (3 = baseline scenario)
-  scenario_col <- 3
-  
   for (y in levels(obj$years$Years)) {
     for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
       
@@ -360,7 +374,7 @@ initialise.jwmodel <- function(obj) {
       RHS <- obj$recruit_limits[
         obj$recruit_limits$`Judge Type` == t &
           obj$recruit_limits$Year == y,
-        scenario_col
+        selected_recruitment_scenario    # user-selected, default = column 3 
         ]
       
       lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
@@ -373,7 +387,6 @@ initialise.jwmodel <- function(obj) {
   obj$constraints$recruitcap <- c(start_row:end_row)
   
   ##### EQ-009 Set limits on the proportion of demand allocated to different types of judge #####
-  ## this currently only implements 'minimum' proportions ##
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$alloc_limits, 
@@ -382,7 +395,6 @@ initialise.jwmodel <- function(obj) {
 
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
   
-  scenario_col <- 3 # TODO replace hard-coding (col 3 = baseline demand)
   
   for (y in levels(obj$years$Years)) {
     for (j in levels(obj$jurisdictions$Jurisdiction)) {
@@ -404,9 +416,9 @@ initialise.jwmodel <- function(obj) {
           5 # MinPct
           ] %>% as.numeric()
         
-        Demand <- obj$demand [
+        Demand <- obj$demand[
           obj$demand$Jurisdiction == j & obj$demand$Year == y,
-          scenario_col
+          selected_demand_scenario # dependant on user-selected (baseline = 3)
         ] %>% as.numeric()
         
         # apply minimums (EQ-009a)
