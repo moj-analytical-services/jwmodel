@@ -14,9 +14,18 @@ allocation_vars_template <- function(obj) {
   if (class(obj) == "jwmodel") {
     
     allocation_vars <- tidyr::expand_grid(
-      Year = levels(obj$years$Years), 
-      Jurisdiction = levels(obj$jurisdictions$Jurisdiction),
-      Judge = levels(obj$judge_types$`Judge Type`)
+      Year = factor(
+        levels(obj$years$Years), 
+        levels = levels(obj$years$Years)
+      ),
+      Jurisdiction = factor(
+        levels(obj$jurisdictions$Jurisdiction),
+        levels = levels(obj$jurisdictions$Jurisdiction)
+      ),
+      Judge = factor(
+        levels(obj$judge_types$`Judge Type`), 
+        levels = levels(obj$judge_types$`Judge Type`)
+      )
     ) %>%
       dplyr::arrange(.data$Year, .data$Jurisdiction, .data$Judge)
     
@@ -32,15 +41,21 @@ allocation_vars_template <- function(obj) {
 #' @importFrom dplyr %>%
 #' @importFrom rlang .data
 resource_vars_template <- function(obj) {
-  # generates corrctly ordered unique combos of Year/Judge Type/In-Out Status
+  # generates correctly ordered unique combos of Year/Judge Type/In-Out Status
   # for "Resource Variables", for use in dplyr joins
   # NB for In-Out Status (io), "E" = existing / in post, "I" = incoming,
   # "O" = outgoing
   if (class(obj) == "jwmodel") {
     
     resource_vars <- tidyr::expand_grid(
-      Year = levels(obj$years$Years),
-      Judge = levels(obj$judge_types$`Judge Type`),
+      Year = factor(
+        levels(obj$years$Years), 
+        levels = levels(obj$years$Years)
+      ),
+      Judge = factor(
+        levels(obj$judge_types$`Judge Type`), 
+        levels = levels(obj$judge_types$`Judge Type`)
+      ),
       io = c("E", "I", "O")
     ) %>%
       dplyr::arrange(.data$Year, .data$Judge, .data$io) %>%
