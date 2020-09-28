@@ -53,24 +53,13 @@ initialise.jwmodel <- function(obj) {
   
   # generates correctly ordered unique combos of Year/Jurisdiction/Judge Type
   # for "Allocation Variables", for use in dplyr joins
-  allocation_vars <- tidyr::expand_grid(
-    Year = levels(obj$years$Years), 
-    Jurisdiction = levels(obj$jurisdictions$Jurisdiction),
-    Judge = levels(obj$judge_types$`Judge Type`)
-  ) %>%
-    dplyr::arrange(.data$Year, .data$Jurisdiction, .data$Judge)
+  allocation_vars <- allocation_vars_template(obj)
   
   # generates correctly ordered unique combos of Year/Judge Type/In-Out Status
   # for "Resource Variables", for use in dplyr joins
   # NB for In-Out Status (io), "E" = existing / in post, "I" = incoming,
   # "O" = outgoing
-  resource_vars <- tidyr::expand_grid(
-    Year = levels(obj$years$Years),
-    Judge = levels(obj$judge_types$`Judge Type`),
-    io = c("E", "I", "O")
-  ) %>%
-    dplyr::arrange(.data$Year, .data$Judge, .data$io) %>%
-    dplyr::filter(.data$Judge != "U")
+  resource_vars <- resource_vars_template(obj)
   
   # initialise model
   lp.wmodel <- lpSolveAPI::make.lp(0, n_vars)
