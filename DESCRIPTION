@@ -1,6 +1,6 @@
 Package: jwmodel
 Title: Toolset For Suggesting And Analysing Judicial Workforce Hiring Profiles
-Version: 0.0.0.9009-a
+Version: 0.0.0.9009
 Authors@R: 
     person(given = "Tom",
            family = "Dewar",
