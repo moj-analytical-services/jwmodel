@@ -313,6 +313,9 @@ initialise.jwmodel <- function(obj) {
   
   ##### EQ-007 Judges must work a minimum number of sitting days each #####
   
+  # This effectively ensures *all* judges are allocated to jurisdictions, 
+  # lending their "avg sitting days" full quota to that jurisdiction's capacity
+  
   df <- allocation_vars %>%
     dplyr::left_join(obj$sitting_days, 
                      by = c("Judge" = "Judge Type", "Year" = "Year")) %>%
@@ -321,7 +324,7 @@ initialise.jwmodel <- function(obj) {
   
   df2 <- resource_vars %>%
     dplyr::left_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
-    dplyr::select(.data$Year, .data$Judge, .data$io, coeff = .data$`Min Sitting Days`) %>%
+    dplyr::select(.data$Year, .data$Judge, .data$io, coeff = .data$`Avg Sitting Days`) %>%
     dplyr::mutate(coeff = dplyr::if_else(.data$io == "E", -.data$coeff, 0))
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
@@ -364,7 +367,7 @@ initialise.jwmodel <- function(obj) {
         obj$recruit_limits$`Judge Type` == t &
           obj$recruit_limits$Year == y,
         selected_recruitment_scenario    # user-selected, default = column 3 
-        ]
+      ]
       
       lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
                                  type = "<=", rhs = RHS)
@@ -432,6 +435,34 @@ initialise.jwmodel <- function(obj) {
   end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
 
   obj$constraints$recruitcap <- c(start_row:end_row)
+  
+  ##### EQ-010 Override Hiring (optional minimum-hire constraint) #####
+  
+  # This applies a *minimum* number of judges to hire in each year if the user
+  # has specified via the inclusion of the optional  "Override Hiring" input 
+  # worksheet. Applied as a >= constraint rather than an = as with the latter
+  # it is far too easy to create an infeasible problem by accident. In practice
+  # this is likely to deliver a hiring solution very close to that specified
+  # (often within rounding error distance)
+  
+  if (!is.null(obj$override_hiring)) {
+    df <- resource_vars %>%
+      dplyr::left_join(obj$override_hiring, by = c("Year", "Judge"))
+    
+    for (y in levels(obj$years$Years)) {
+      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+        indices <- which(df$Year == y & df$Judge == t) + nrow(allocation_vars)
+        coeffs <- c(0, 1, 0)
+        # RHS = User-defined number hired for this year/judge combo
+        RHS <- df[df$Year == y & df$Judge == t & df$io == "I", 4] 
+        if (is.na(RHS)) {RHS <- 0} # set recruitment to zero if missing
+        
+        lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
+                                   type = ">=", rhs = RHS)
+        
+      }
+    }
+  }
   
   ##### update model #####
   obj$lpmodel <- lp.wmodel

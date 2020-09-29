@@ -102,19 +102,19 @@ list_of_input_sheets <- function() {
                   "Expected Departures", "Sitting Day Capacity", "Baseline Demand",
                   "Judge Progression", "Fixed Costs", "Variable Costs",
                   "Recruitment Limits", "Allocation Limits", 
-                  "Penalty Costs", "Model Info")
+                  "Penalty Costs", "Model Info", "Override Hiring")
   
   listnames <- c("judge_types", "jurisdictions", "years", "n_judges", 
                  "judge_departures", "sitting_days", "demand",
                  "judge_progression", "fixed_costs", "variable_costs",
                  "recruit_limits", "alloc_limits", 
-                 "penalty_costs", "metadata")
+                 "penalty_costs", "metadata", "override_hiring")
   
   mandatory <- c(TRUE, TRUE, TRUE, TRUE, 
                  TRUE, TRUE, TRUE,
                  TRUE, TRUE, TRUE,
                  TRUE, TRUE, 
-                 FALSE, TRUE)
+                 FALSE, TRUE, FALSE)
   
   lookup <- dplyr::as_tibble(sheetnames) %>%
     dplyr::bind_cols(dplyr::as_tibble(listnames)) %>%
