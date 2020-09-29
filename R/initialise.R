@@ -321,7 +321,7 @@ initialise.jwmodel <- function(obj) {
   
   df2 <- resource_vars %>%
     dplyr::left_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
-    dplyr::select(.data$Year, .data$Judge, .data$io, coeff = .data$`Min Sitting Days`) %>%
+    dplyr::select(.data$Year, .data$Judge, .data$io, coeff = .data$`Avg Sitting Days`) %>%
     dplyr::mutate(coeff = dplyr::if_else(.data$io == "E", -.data$coeff, 0))
   
   start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
