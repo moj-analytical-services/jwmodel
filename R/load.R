@@ -127,6 +127,17 @@ load_from_file.jwmodel <- function(obj, filepath) {
     obj$penalty_costs <- df
   }
   
+  if (c("Override Hiring") %in% readxl::excel_sheets(filepath)) {
+    # load user-specified numbers of judges hired which will be used to 'force'
+    # the model to hire exactly the number of judges given
+    # NB this can easily create a infeasible problem in conjunction with other
+    # constraints if not careful
+    df <- readxl::read_excel(filepath, sheet = "Override Hiring")
+    df$Judge <- factor(df$Judge, levels = judge_levels)
+    df$Year <- factor(df$Year, levels = year_levels)
+    obj$override_hiring <- df
+  }
+  
   if (c("Model Info") %in% readxl::excel_sheets(filepath)) {
     df <- readxl::read_excel(filepath, sheet = "Model Info", 
                              col_names = c("field", "value"))
