@@ -23,16 +23,81 @@ optimise.default <- function(obj) {
 #' @importFrom rlang .data
 #' @export
 optimise.jwmodel <- function(obj) {
-  if (is.null(obj$lpmodel)) {
-    initialise(obj)
-  }
+  # TODO replace this check
+  # if (is.null(obj$lpmodel)) {
+  #   initialise(obj)
+  # }
+  
+  # create lpSolveAPI object from contraints previously defined in 'initialise'
+  
+  n_vars <- length(obj$constraints$obj$coefficients)
+  
+  lp.wmodel <- lpSolveAPI::make.lp(0, n_vars)
+  
+  lp_rownames <- c()
+  
+  # construct the actual lp model: objective function + constraints
+  # (NB uses a vectorised method of looping through list of constraints)
+  sapply(
+    seq_along(obj$constraints),
+    function(x) {
+      name <- names(obj$constraints)[[x]]
+      if (name == "obj") {
+        # create the objective function
+        coeffs <- obj$constraints[[x]]$coefficients
+        lpSolveAPI::set.objfn(lp.wmodel, obj = coeffs)
+      } else {
+        # create constraints
+        constraint_names <- sapply(
+          obj$constraints[[x]], function(y) {
+            lpSolveAPI::add.constraint(
+              lp.wmodel, 
+              xt = y$coefficients,
+              type = y$type, 
+              rhs = y$rhs
+            )
+          
+            # name constraint (if NULL, default will be used)
+            y$name
+          }
+        )
+        
+        lp_rownames <<- c(lp_rownames, constraint_names)
+      }
+    }
+  )
+  
+  # apply row (constraint) names
+  lp_dimnames <- dimnames(lp.wmodel)
+  lp_dimnames[[1]] <- unlist(lp_rownames)
+  dimnames(lp.wmodel) <- lp_dimnames
+  
+  
+  # add lower bounds
+  sapply(
+    obj$bounds$lower,
+    function(x) {
+      lpSolveAPI::set.bounds(lp.wmodel, lower = x$coefficients, columns = x$indices)
+    }
+  )
+  
+  # add upper bounds
+  sapply(
+    obj$bounds$upper,
+    function(x) {
+      lpSolveAPI::set.bounds(lp.wmodel, upper = x$coefficients, columns = x$indices)
+    }
+  )
+  
+  # add slack constraints
+  # TODO
   
   # add datetime stamp to model metadata
   obj$metadata$lastrun$date <- Sys.time()
   
   # solve
   timed <- system.time({
-    solve_outcome <- solve(obj$lpmodel)
+    solve_outcome <- solve(lp.wmodel)
   })
   
   # record metadata on the optimisation
@@ -66,7 +131,7 @@ optimise.jwmodel <- function(obj) {
   n_res <- nrow(resource_vars)
   
   allocation_output <- allocation_vars %>%
-    dplyr::mutate(Allocated = lpSolveAPI::get.variables(obj$lpmodel)[1:n_alloc]) %>%
+    dplyr::mutate(Allocated = lpSolveAPI::get.variables(lp.wmodel)[1:n_alloc]) %>%
     dplyr::inner_join(obj$variable_costs, by = c("Jurisdiction", "Judge")) %>%
     dplyr::inner_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
     dplyr::left_join(obj$judge_types, by = c("Judge" = "Judge Type")) %>%
@@ -90,7 +155,7 @@ optimise.jwmodel <- function(obj) {
         io == "I" ~ "Hired (in)",
         io == "O" ~ "Departed (out)"
       ),
-      FTE = lpSolveAPI::get.variables(obj$lpmodel)[(n_alloc + 1):(n_alloc + n_res)],
+      FTE = lpSolveAPI::get.variables(lp.wmodel)[(n_alloc + 1):(n_alloc + n_res)],
     ) %>%
     dplyr::select(-.data$io)
   
