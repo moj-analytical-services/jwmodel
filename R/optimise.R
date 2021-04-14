@@ -89,8 +89,26 @@ optimise.jwmodel <- function(obj) {
     }
   )
   
-  # add slack constraints
-  # TODO
+  # add slack constraints for the following constraint types
+  # EQ-008 Constrain the maximum number of Judges recruited in one year
+  # EQ-009 Set limits on the proportion of demand allocated to different types of judge
+  add_slack_constraints_for <- c("EQ008", "EQ009")
+  slack_coefficient <- c(-1, 1)
+  slack_constraint_cost <- 1000000
+  
+  # for each constraint type for which slack should be added
+  for (c in 1:length(add_slack_constraints_for)) {
+    indices <- startsWith(lp_dimnames[[1]], add_slack_constraints_for[c]) %>% which()
+    coeffs <- rep(slack_coefficient[c], length(indices))
+    
+    # add objective function coefficient
+    indices <- c(0, indices)
+    coeffs <- c(slack_constraint_cost, coeffs)
+    
+    # add column for slack
+    lpSolveAPI::add.column(lp.wmodel, x = coeffs, indices = indices)
+  }
+  
   
   # add datetime stamp to model metadata
   obj$metadata$lastrun$date <- Sys.time()
