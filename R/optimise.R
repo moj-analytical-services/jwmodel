@@ -34,6 +34,8 @@ optimise.jwmodel <- function(obj) {
   
   lp.wmodel <- lpSolveAPI::make.lp(0, n_vars)
   
+  lp_colnames <- create_column_names(obj)
+  
   lp_rownames <- c()
   
   # construct the actual lp model: objective function + constraints
@@ -67,12 +69,6 @@ optimise.jwmodel <- function(obj) {
     }
   )
   
-  # apply row (constraint) names
-  lp_dimnames <- dimnames(lp.wmodel)
-  lp_dimnames[[1]] <- unlist(lp_rownames)
-  dimnames(lp.wmodel) <- lp_dimnames
-  
-  
   # add lower bounds
   sapply(
     obj$bounds$lower,
@@ -88,6 +84,9 @@ optimise.jwmodel <- function(obj) {
       lpSolveAPI::set.bounds(lp.wmodel, upper = x$coefficients, columns = x$indices)
     }
   )
+  
+  # get dimension names (this is before we have renamed them)
+  lp_dimnames <- dimnames(lp.wmodel)
   
   # add slack constraints for the following constraint types
   # EQ-008 Constrain the maximum number of Judges recruited in one year
@@ -107,8 +106,15 @@ optimise.jwmodel <- function(obj) {
     
     # add column for slack
     lpSolveAPI::add.column(lp.wmodel, x = coeffs, indices = indices)
+    
+    # append to list of column names
+    lp_colnames <- c(lp_colnames, paste0("Slack|", add_slack_constraints_for[c]))
   }
   
+  # set meaningful row (constraint) and column (variable) names
+  lp_dimnames[[1]] <- unlist(lp_rownames)
+  lp_dimnames[[2]] <- unlist(lp_colnames)
+  dimnames(lp.wmodel) <- lp_dimnames
   
   # add datetime stamp to model metadata
   obj$metadata$lastrun$date <- Sys.time()

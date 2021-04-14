@@ -189,3 +189,25 @@ create_objective_function <- function(n_cols, coeffs, indices) {
     
   }
 }
+
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+create_column_names <- function(obj) {
+  
+  alloc_cols <- allocation_vars_template(obj) %>%
+    tidyr::unite(col_name, dplyr::everything(), sep = "|") %>%
+    dplyr::mutate(col_name = paste0("Alloc|", col_name))
+  
+  res_cols <- resource_vars_template(obj) %>%
+    tidyr::unite(col_name, dplyr::everything(), sep = "|") %>%
+    dplyr::mutate(col_name = paste0("Resource|", col_name))
+  
+  new_col_names <- dplyr::bind_rows(
+    alloc_cols,
+    res_cols,
+  )
+  
+  # return a vector of column names for model variables in the correct order 
+  # (excluding any slack variables)
+  return(new_col_names$col_name)
+}
