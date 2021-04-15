@@ -5,24 +5,27 @@
 #' rights results into the jwmodel object which is returned.
 #' 
 #' @param obj jwmodel object to be optimised
+#' @param slack_constraints If TRUE, slack constraints are added for constraints
+#'   EQ008 and EQ009. This should prevent most/all infeasibilities. Used for 
+#'   diagnosing infeasible models. Default = FALSE.
 #' @return Returns an object of type \code{jwmodel}
 #' @export
 #' @examples 
 #' \dontrun{
 #' mymodel <- optimise(mymodel)
 #' }
-optimise <- function(obj) {
+optimise <- function(obj, slack_constraints = FALSE) {
   UseMethod("optimise")
 }
 
 #' @export
-optimise.default <- function(obj) {
+optimise.default <- function(obj, slack_constraints = FALSE) {
   cat("'optimise' function can only be used on jwmodel objects")
 }
 
 #' @importFrom rlang .data
 #' @export
-optimise.jwmodel <- function(obj) {
+optimise.jwmodel <- function(obj, slack_constraints = FALSE) {
   # TODO replace this check
   # if (is.null(obj$lpmodel)) {
   #   initialise(obj)
@@ -88,27 +91,30 @@ optimise.jwmodel <- function(obj) {
   # get dimension names (this is before we have renamed them)
   lp_dimnames <- dimnames(lp.wmodel)
   
-  # add slack constraints for the following constraint types
-  # EQ-008 Constrain the maximum number of Judges recruited in one year
-  # EQ-009 Set limits on the proportion of demand allocated to different types of judge
-  add_slack_constraints_for <- c("EQ008", "EQ009")
-  slack_coefficient <- c(-1, 1)
-  slack_constraint_cost <- 1000000
-  
-  # for each constraint type for which slack should be added
-  for (c in 1:length(add_slack_constraints_for)) {
-    indices <- startsWith(lp_dimnames[[1]], add_slack_constraints_for[c]) %>% which()
-    coeffs <- rep(slack_coefficient[c], length(indices))
+  # only add slack constraints if flag set (by default it is not)
+  if (slack_constraints == TRUE) {
+    # add slack constraints for the following constraint types
+    # EQ-008 Constrain the maximum number of Judges recruited in one year
+    # EQ-009 Set limits on the proportion of demand allocated to different types of judge
+    add_slack_constraints_for <- c("EQ008", "EQ009")
+    slack_coefficient <- c(-1, 1)
+    slack_constraint_cost <- 1000000
     
-    # add objective function coefficient
-    indices <- c(0, indices)
-    coeffs <- c(slack_constraint_cost, coeffs)
-    
-    # add column for slack
-    lpSolveAPI::add.column(lp.wmodel, x = coeffs, indices = indices)
-    
-    # append to list of column names
-    lp_colnames <- c(lp_colnames, paste0("Slack|", add_slack_constraints_for[c]))
+    # for each constraint type for which slack should be added
+    for (c in 1:length(add_slack_constraints_for)) {
+      indices <- startsWith(lp_dimnames[[1]], add_slack_constraints_for[c]) %>% which()
+      coeffs <- rep(slack_coefficient[c], length(indices))
+      
+      # add objective function coefficient
+      indices <- c(0, indices)
+      coeffs <- c(slack_constraint_cost, coeffs)
+      
+      # add column for slack
+      lpSolveAPI::add.column(lp.wmodel, x = coeffs, indices = indices)
+      
+      # append to list of column names
+      lp_colnames <- c(lp_colnames, paste0("Slack|", add_slack_constraints_for[c]))
+    }
   }
   
   # set meaningful row (constraint) and column (variable) names

@@ -4,10 +4,14 @@
 \alias{optimise}
 \title{Runs the optimisation for a jwmodel}
 \usage{
-optimise(obj)
+optimise(obj, slack_constraints = FALSE)
 }
 \arguments{
 \item{obj}{jwmodel object to be optimised}
+
+\item{slack_constraints}{If TRUE, slack constraints are added for constraints
+EQ008 and EQ009. This should prevent most/all infeasibilities. Used for 
+diagnosing infeasible models. Default = FALSE.}
 }
 \value{
 Returns an object of type \code{jwmodel}
