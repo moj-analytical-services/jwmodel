@@ -139,13 +139,21 @@ load_from_file.jwmodel <- function(obj, filepath) {
   }
   
   if (c("Model Info") %in% readxl::excel_sheets(filepath)) {
+    # load any and all meta data contained in the "Model Info" tab
+    # assumes data is present in two columns only: label + value
     df <- readxl::read_excel(filepath, sheet = "Model Info", 
                              col_names = c("field", "value"))
-    # TODO refactor code to be more flexible and add other info into metadata
-    # should the user specify any
-    obj$metadata$name <- df[1,2]
-    obj$metadata$description <- df[2,2]
-  } else {
+    # force fieldnames to be lowercase to avoid case-sensitivity issues later
+    df <- df %>%
+      dplyr::mutate(field = tolower(field))
+    
+    sapply(1:length(df$field), function(n) {
+      obj$metadata[df$field[n]] <<- df$value[n]
+    })
+    
+  }
+  
+  if (is.null(obj$metadata$name)) {
     # name it after load datetime if no name is otherwise specified
     obj$metadata$name <- as.character(Sys.time())
   }
