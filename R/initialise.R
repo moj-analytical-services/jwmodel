@@ -138,7 +138,8 @@ initialise.jwmodel <- function(obj) {
       RHS <- obj$demand[
         obj$demand$Year == y & obj$demand$Jurisdiction == j,
         selected_demand_scenario # user selected, default = baseline = 3
-        ] %>% as.numeric()
+        ] 
+      RHS <- as.numeric(RHS)
       
       constraint_name <- paste("EQ002-Demand", as.character(y), as.character(j), sep = "-")
       
