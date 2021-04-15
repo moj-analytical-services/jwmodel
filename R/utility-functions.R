@@ -124,3 +124,90 @@ list_of_input_sheets <- function() {
   
   return(lookup)
 }
+
+create_constraint <- function(n_cols, coeffs, indices, constraint_type, rhs, name = NULL) {
+  
+  # check validity of parameters
+  if (
+    # check data types are as they should be
+    !is.numeric(n_cols) | !is.numeric(coeffs) | !is.numeric(indices) | !is.numeric(rhs) | 
+    !(is.numeric(constraint_type) | is.character(constraint_type)) |
+    n_cols < 1 | # number of variables (columns) must be > zero
+    (min(indices) < 1 | max(indices) > n_cols) # indices must be within valid range
+  ) {
+    
+    warning("Invalid parameters passed to 'create_constriant' function")
+    return(NULL)
+    
+  } else { # parameters passed validity check
+    
+    constraint <- list()
+  
+    # coefficients must be a numeric vector with length equal to number of variables
+    constraint$coefficients <- rep(0, n_cols)
+    constraint$coefficients[as.integer(indices)] <- coeffs
+    
+    # constraint type must be a numeric or character value from the set
+    # {1 = "<="; 2 = ">="; 3 = "="}
+    constraint$type <- constraint_type
+    
+    # numeric value specifying the right-hand side of the constraint
+    constraint$rhs <- rhs
+    
+    # add name of constraint if provided
+    if (!is.null(name) & is.character(name)) {
+      constraint$name <- name
+    }
+    
+    return(constraint)
+  
+  }
+  
+}
+
+create_objective_function <- function(n_cols, coeffs, indices) {
+  # check validity of parameters
+  if (
+    # check data types are as they should be
+    !is.numeric(n_cols) | !is.numeric(coeffs) | !is.numeric(indices) |
+    n_cols < 1 | # number of variables (columns) must be > zero
+    (min(indices) < 1 | max(indices) > n_cols) # indices must be within valid range
+  ) {
+    
+    warning("Invalid parameters passed to 'create_objective_function' function")
+    return(NULL)
+    
+  } else { # parameters passed validity check
+    
+    obj_fct <- list()
+    
+    # coefficients must be a numeric vector with length equal to number of variables
+    obj_fct$coefficients <- rep(0, n_cols)
+    obj_fct$coefficients[as.integer(indices)] <- coeffs
+    
+    return(obj_fct)
+    
+  }
+}
+
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+create_column_names <- function(obj) {
+  
+  alloc_cols <- allocation_vars_template(obj) %>%
+    tidyr::unite(col_name, dplyr::everything(), sep = "|") %>%
+    dplyr::mutate(col_name = paste0("Alloc|", col_name))
+  
+  res_cols <- resource_vars_template(obj) %>%
+    tidyr::unite(col_name, dplyr::everything(), sep = "|") %>%
+    dplyr::mutate(col_name = paste0("Resource|", col_name))
+  
+  new_col_names <- dplyr::bind_rows(
+    alloc_cols,
+    res_cols,
+  )
+  
+  # return a vector of column names for model variables in the correct order 
+  # (excluding any slack variables)
+  return(new_col_names$col_name)
+}

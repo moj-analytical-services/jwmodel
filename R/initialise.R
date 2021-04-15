@@ -62,10 +62,11 @@ initialise.jwmodel <- function(obj) {
   resource_vars <- resource_vars_template(obj)
   
   # initialise model
-  lp.wmodel <- lpSolveAPI::make.lp(0, n_vars)
+  #lp.wmodel <- lpSolveAPI::make.lp(0, n_vars)
   
   # add bounds to prevent any variable taking a value less than zero
-  lpSolveAPI::set.bounds(lp.wmodel, lower = rep(0, n_vars))
+  bounds <- list(coefficients = rep(0, n_vars), indices = 1:n_vars)
+  obj$bounds$lower <- append(obj$bounds$lower, list(bounds))
   
   # TODO check if these are now redundant
   index_years <- c(0:(n_years-1)) * n_types * 3
@@ -110,10 +111,11 @@ initialise.jwmodel <- function(obj) {
   
   # combine coefficients into a single vector in the correct order
   coeffs <- c(f_costs_yjt, s_costs_yt)
-  indices <- 1:length(coeffs)
+  n_cols <- length(coeffs)
+  indices <- 1:n_cols
   
   # create objective function using calculated coefficients
-  lpSolveAPI::set.objfn(lp.wmodel, obj = coeffs, indices = indices)
+  obj$constraints$obj <- create_objective_function(n_cols, coeffs, indices)
   
   ##### EQ-002 Demand must be satisfied constraint #####
   # See Ref EQ-002b
@@ -124,8 +126,8 @@ initialise.jwmodel <- function(obj) {
     dplyr::select(.data$Year, .data$Jurisdiction, .data$Judge, coeff = .data$`Avg Sitting Days`) %>%
     dplyr::mutate(coeff = tidyr::replace_na(.data$coeff, 1))
   
-  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
-  
+  obj$constraints$demand <- list()
+    
   for (y in levels(obj$years$Years)) {
     
     for (j in levels(obj$jurisdictions$Jurisdiction)) {
@@ -138,16 +140,15 @@ initialise.jwmodel <- function(obj) {
         selected_demand_scenario # user selected, default = baseline = 3
         ] %>% as.numeric()
       
-      lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                 type = '>=', rhs = RHS)
+      constraint_name <- paste("EQ002-Demand", as.character(y), as.character(j), sep = "-")
+      
+      # add constraint to jwmodel object in list format
+      constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
+      obj$constraints$demand <- append(obj$constraints$demand, list(constraint))
       
     }
     
   }
-  
-  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
-  
-  obj$constraints$demand <- c(start_row:end_row)
   
   ##### EQ-004 Cannot allocate more judges than available constraint #####
   
@@ -157,7 +158,7 @@ initialise.jwmodel <- function(obj) {
   df2 <- resource_vars %>%
     dplyr::mutate(coeff = dplyr::if_else(.data$io == "E", -1, 0))
   
-  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
+  obj$constraints$allocate <- list()
   
   for (y in levels(obj$years$Years)) {
     
@@ -170,23 +171,22 @@ initialise.jwmodel <- function(obj) {
                    which(df2$Year == y & df2$Judge == t) + nrow(allocation_vars))
       coeffs <- c(coeffs, df2$coeff[df2$Year == y & df2$Judge == t])
       
-      lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                 type = '<=', 0)
+      constraint_name <- paste("EQ004-Allocate", as.character(y), as.character(t), sep = "-")
+      
+      # add constraint to jwmodel object in list format
+      constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+      obj$constraints$allocate <- append(obj$constraints$allocate, list(constraint))
       
     }
     
   }
-  
-  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
-  
-  obj$constraints$allocate <- c(start_row:end_row)
   
   ##### EQ-001 In Post Judges constraint #####
   
   # constraint such that volume of judges in one year equals volume in previous
   # plus number recruited minus number leaving
   
-  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
+  obj$constraints$inpost <- list()
   
   for (i_year in 1:n_years) {
     
@@ -225,16 +225,15 @@ initialise.jwmodel <- function(obj) {
         RHS <- 0
       }
       
-      lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                 type = "=", rhs = RHS)
+      constraint_name <- paste("EQ001-InPost", as.character(y), as.character(t), sep = "-")
+      
+      # add constraint to jwmodel object in list format
+      constraint <- create_constraint(n_cols, coeffs, indices, "=", RHS, constraint_name)
+      obj$constraints$inpost <- append(obj$constraints$inpost, list(constraint))
       
     }
     
   }
-  
-  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
-  
-  obj$constraints$inpost <- c(start_row:end_row)
   
   ##### EQ-003 Outgoing Judges constraint #####
   
@@ -243,7 +242,7 @@ initialise.jwmodel <- function(obj) {
   
   df_jp <- obj$judge_progression
   
-  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
+  obj$constraints$outgoing <- list()
   
   for (y in levels(obj$years$Years)) { # for each year
     
@@ -278,16 +277,15 @@ initialise.jwmodel <- function(obj) {
           obj$judge_departures$Year == y
         ] 
       
-      lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                 type = "=", rhs = RHS)
+      constraint_name <- paste("EQ003-Outgoing", as.character(y), as.character(f), sep = "-")
+      
+      # add constraint to jwmodel object in list format
+      constraint <- create_constraint(n_cols, coeffs, indices, "=", RHS, constraint_name)
+      obj$constraints$outgoing <- append(obj$constraints$outgoing, list(constraint))
       
     }
     
   }
-  
-  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
-  
-  obj$constraints$outgoing <- c(start_row:end_row)
   
   ##### EQ-006 Judges only work in certain jurisdictions constraint ####
   
@@ -309,7 +307,9 @@ initialise.jwmodel <- function(obj) {
   
   ubounds <- rep(0, length(indices))
   
-  lpSolveAPI::set.bounds(lp.wmodel, upper = ubounds, columns = indices)
+  # define as upper bounds of zero (lower bounds of zero defined elsewhere)
+  bounds <- list(coefficients = ubounds, indices = indices)
+  obj$bounds$upper <- append(obj$bounds$upper, list(bounds))
   
   ##### EQ-007 Judges must work a minimum number of sitting days each #####
   
@@ -327,7 +327,7 @@ initialise.jwmodel <- function(obj) {
     dplyr::select(.data$Year, .data$Judge, .data$io, coeff = .data$`Avg Sitting Days`) %>%
     dplyr::mutate(coeff = dplyr::if_else(.data$io == "E", -.data$coeff, 0))
   
-  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
+  obj$constraints$mindays <- list()
   
   for (y in levels(obj$years$Years)) {
     
@@ -340,22 +340,28 @@ initialise.jwmodel <- function(obj) {
       coeffs2 <- df2$coeff[indices2]
       indices2 <- indices2 + n_years * n_jurisdictions * (n_types + 1)
       
-      lpSolveAPI::add.constraint(lp.wmodel, xt = c(coeffs, coeffs2),
-                                 indices = c(indices, indices2), type = ">=", rhs = 0)
+      constraint_name <- paste("EQ007-MinDays", as.character(y), as.character(t), sep = "-")
+      
+      # add constraint to jwmodel object in list format
+      constraint <- create_constraint(
+        n_cols = n_cols,
+        coeffs = c(coeffs, coeffs2),
+        indices = c(indices, indices2),
+        constraint_type = ">=",
+        rhs = RHS,
+        constraint_name
+      )
+      obj$constraints$mindays <- append(obj$constraints$mindays, list(constraint))
       
     }
     
   }
   
-  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
-  
-  obj$constraints$mindays <- c(start_row:end_row)
-  
   ##### EQ-008 Constrain the maximum number of Judges recruited in one year #####
   
   df <- resource_vars
   
-  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
+  obj$constraints$recruitcap <- list()
   
   for (y in levels(obj$years$Years)) {
     for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
@@ -368,15 +374,16 @@ initialise.jwmodel <- function(obj) {
           obj$recruit_limits$Year == y,
         selected_recruitment_scenario    # user-selected, default = column 3 
       ]
+      RHS <- as.numeric(RHS) 
       
-      lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                 type = "<=", rhs = RHS)
+      constraint_name <- paste("EQ008-MaxRecruit", as.character(y), as.character(t), sep = "-")
+      
+      # add constraint to jwmodel object in list format
+      constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+      obj$constraints$recruitcap <- append(obj$constraints$recruitcap, list(constraint))
+      
     }
   }
-  
-  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
-  
-  obj$constraints$recruitcap <- c(start_row:end_row)
   
   ##### EQ-009 Set limits on the proportion of demand allocated to different types of judge #####
   
@@ -385,8 +392,7 @@ initialise.jwmodel <- function(obj) {
                      by = c("Judge", "Jurisdiction")) %>%
     tidyr::replace_na(list(MinPct = 0, MaxPct = 0))
 
-  start_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1] + 1
-  
+  obj$constraints$demand_ratio <- list()
   
   for (y in levels(obj$years$Years)) {
     for (j in levels(obj$jurisdictions$Jurisdiction)) {
@@ -396,7 +402,7 @@ initialise.jwmodel <- function(obj) {
         coeffs <- obj$sitting_days[
           obj$sitting_days$Year == y & obj$sitting_days$`Judge Type` == t,
           3 # `Avg Sitting Days`
-        ]
+        ] %>% as.numeric()
         
         MinProportion <- df[
           df$Judge == t & df$Year == y & df$Jurisdiction == j,
@@ -416,25 +422,29 @@ initialise.jwmodel <- function(obj) {
         # apply minimums (EQ-009a)
         if (MinProportion > 0 & MinProportion <=1 ) {
           RHS <- c(MinProportion * Demand)
-    
-          lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                     type = ">=", rhs = RHS)
+          
+          constraint_name <- paste("EQ009-MinProp", as.character(y), as.character(j), as.character(t), sep = "-")
+          
+          # add constraint to jwmodel object in list format
+          constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
+          obj$constraints$demand_ratio <- append(obj$constraints$demand_ratio, list(constraint))
+          
         }
         
         # apply maximums (EQ-009b)
         if (MaxProportion > 0 & MaxProportion < 1) {
           RHS <- c(MaxProportion * Demand)
           
-          lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                     type = "<=", rhs = RHS)
+          constraint_name <- paste("EQ009-MaxProp", as.character(y), as.character(j), as.character(t), sep = "-")
+          
+          # add constraint to jwmodel object in list format
+          constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+          obj$constraints$demand_ratio <- append(obj$constraints$demand_ratio, list(constraint))
+          
         }
       }
     }
   }
-
-  end_row <- lpSolveAPI::dim.lpExtPtr(lp.wmodel)[1]
-
-  obj$constraints$recruitcap <- c(start_row:end_row)
   
   ##### EQ-010 Override Hiring (optional minimum-hire constraint) #####
   
@@ -444,6 +454,8 @@ initialise.jwmodel <- function(obj) {
   # it is far too easy to create an infeasible problem by accident. In practice
   # this is likely to deliver a hiring solution very close to that specified
   # (often within rounding error distance)
+  
+  obj$constraints$min_hire <- list()
   
   if (!is.null(obj$override_hiring)) {
     df <- resource_vars %>%
@@ -457,15 +469,16 @@ initialise.jwmodel <- function(obj) {
         RHS <- df[df$Year == y & df$Judge == t & df$io == "I", 4] 
         if (is.na(RHS)) {RHS <- 0} # set recruitment to zero if missing
         
-        lpSolveAPI::add.constraint(lp.wmodel, xt = coeffs, indices = indices,
-                                   type = ">=", rhs = RHS)
+        constraint_name <- paste("EQ010-MinHire", as.character(y), as.character(t), sep = "-")
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
+        obj$constraints$min_hire <- append(obj$constraints$min_hire, list(constraint))
         
       }
     }
   }
   
-  ##### update model #####
-  obj$lpmodel <- lp.wmodel
-  
+  # return updated model
   return(obj)
 }
