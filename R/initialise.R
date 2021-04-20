@@ -31,9 +31,14 @@ initialise.jwmodel <- function(obj) {
   n_years <- nrow(obj$years)
   n_jurisdictions <- nrow(obj$jurisdictions)
   n_types <- nrow(obj$judge_types)
+  if (is.null(obj$regions)) {
+    n_regions <- 1
+  } else {
+    n_regions <- nrow(obj$regions)
+  }
   
-  n_vars <- (n_years * n_jurisdictions * (n_types + 1)) +
-    (n_years * n_types * 3)
+  n_vars <- (n_regions * n_years * n_jurisdictions * (n_types + 1)) +
+    (n_regions * n_years * n_types * 3)
   
   # identify user-selected demand scenario (from passed metadata),
   # default = baseline = 3 (3rd column in 'baseline demand' table)
@@ -51,27 +56,21 @@ initialise.jwmodel <- function(obj) {
     selected_recruitment_scenario <- 3
   }
   
-  # generates correctly ordered unique combos of Year/Jurisdiction/Judge Type
+  # generates correctly ordered unique combos of (Region)/Year/Jurisdiction/Judge Type
   # for "Allocation Variables", for use in dplyr joins
   allocation_vars <- allocation_vars_template(obj)
   
-  # generates correctly ordered unique combos of Year/Judge Type/In-Out Status
+  # generates correctly ordered unique combos of (Region)/Year/Judge Type/In-Out Status
   # for "Resource Variables", for use in dplyr joins
   # NB for In-Out Status (io), "E" = existing / in post, "I" = incoming,
   # "O" = outgoing
   resource_vars <- resource_vars_template(obj)
   
-  # initialise model
-  #lp.wmodel <- lpSolveAPI::make.lp(0, n_vars)
   
   # add bounds to prevent any variable taking a value less than zero
   bounds <- list(coefficients = rep(0, n_vars), indices = 1:n_vars)
   obj$bounds$lower <- append(obj$bounds$lower, list(bounds))
   
-  # TODO check if these are now redundant
-  index_years <- c(0:(n_years-1)) * n_types * 3
-  index_types <- c(0:(n_types-1)) * 3
-  i_resource_vars <- n_years * n_jurisdictions * (n_types + 1) + 1
   
   ##### EQ-000 set Objective Function #####
   # Minimise total 'cost': ref EQ000
@@ -81,8 +80,8 @@ initialise.jwmodel <- function(obj) {
   # coefficient = avg sitting days (capacity) x avg per-sitting-day cost
   # (result ordered by Year > Jurisdiction > Judge Type)
   df <- allocation_vars %>%
-    dplyr::left_join(obj$variable_costs, by = c("Judge", "Jurisdiction")) %>%
-    dplyr::left_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
+    dplyr::left_join(obj$variable_costs, by = c("Judge", "Jurisdiction", "Region")) %>%
+    dplyr::left_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year", "Region")) %>%
     dplyr::left_join(obj$penalty_costs, by = c("Judge", "Jurisdiction")) %>%
     dplyr::mutate(`Avg Sitting Day Cost` = dplyr::if_else(.data$Judge == "U", 
                                                           .data$`Penalty Cost`,
@@ -96,13 +95,10 @@ initialise.jwmodel <- function(obj) {
   # create ordered coefficients for 'in-post' resource variables (= salary cost)
   
   df <- resource_vars %>%
-    dplyr::left_join(obj$fixed_costs, by = c("Judge" = "Judge Type")) %>%
+    dplyr::left_join(obj$fixed_costs, by = c("Judge" = "Judge Type", "Region")) %>%
+    tidyr::replace_na(list("Avg Annual Cost" = 0)) %>%
     dplyr::mutate(coeff = dplyr::if_else(.data$io == "E", .data$`Avg Annual Cost`, 0))
   
-  # penalty cost per-hire must exceed max difference in avg salary between
-  # judges of different types
-  # per_hire_penalty <- max(obj$fixed_costs$`Avg Annual Cost`) -
-  #   min(obj$fixed_costs$`Avg Annual Cost`)
   
   # interleve with penalty cost coefficients for 'income' and zero cost for
   # 'outgoing' resource variables
@@ -121,31 +117,44 @@ initialise.jwmodel <- function(obj) {
   # See Ref EQ-002b
   
   df <- allocation_vars %>%
-    dplyr::left_join(obj$sitting_days, 
-                     by = c("Judge" = "Judge Type", "Year" = "Year")) %>%
-    dplyr::select(.data$Year, .data$Jurisdiction, .data$Judge, coeff = .data$`Avg Sitting Days`) %>%
+    dplyr::left_join(
+      obj$sitting_days, 
+      by = c("Judge" = "Judge Type", "Year", "Region")
+    ) %>%
+    dplyr::select(
+      .data$Region, .data$Year, .data$Jurisdiction, .data$Judge, 
+      coeff = .data$`Avg Sitting Days`
+    ) %>%
     dplyr::mutate(coeff = tidyr::replace_na(.data$coeff, 1))
   
   obj$constraints$demand <- list()
+  
+  # create constraint for each Region / Year / Jurisdiction combo
+  for (r in levels(obj$regions$Region)) {
     
-  for (y in levels(obj$years$Years)) {
-    
-    for (j in levels(obj$jurisdictions$Jurisdiction)) {
+    for (y in levels(obj$years$Years)) {
       
-      indices <- which(df$Year == y & df$Jurisdiction == j)
-      coeffs <- df$coeff[indices]
-      
-      RHS <- obj$demand[
-        obj$demand$Year == y & obj$demand$Jurisdiction == j,
-        selected_demand_scenario # user selected, default = baseline = 3
-        ] 
-      RHS <- as.numeric(RHS)
-      
-      constraint_name <- paste("EQ002-Demand", as.character(y), as.character(j), sep = "-")
-      
-      # add constraint to jwmodel object in list format
-      constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
-      obj$constraints$demand <- append(obj$constraints$demand, list(constraint))
+      for (j in levels(obj$jurisdictions$Jurisdiction)) {
+        
+        indices <- which(df$Region == r & df$Year == y & df$Jurisdiction == j)
+        coeffs <- df$coeff[indices]
+        
+        RHS <- obj$demand[
+          obj$demand$Region == r & obj$demand$Year == y & obj$demand$Jurisdiction == j,
+          selected_demand_scenario # user selected, default = baseline = 3
+          ] 
+        RHS <- as.numeric(RHS)
+        
+        constraint_name <- paste(
+          "EQ002|Demand", as.character(r), as.character(y), as.character(j), 
+          sep = "|"
+        )
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
+        obj$constraints$demand <- append(obj$constraints$demand, list(constraint))
+        
+      }
       
     }
     
