@@ -240,5 +240,14 @@ load_from_file.jwmodel <- function(obj, filepath) {
     obj$override_hiring <- df
   }
   
+  # if no Regions defined, treat as if there is one single region "National"
+  if (is.null(obj$regions)) {
+    obj$regions <- dplyr::tibble(
+      Region = "National",
+      Description = "England & Wales"
+    )
+    obj$regions$Region <- as.factor(obj$regions$Region)
+  }
+  
   return(obj)
 }
