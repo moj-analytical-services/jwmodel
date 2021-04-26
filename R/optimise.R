@@ -66,18 +66,26 @@ optimise.jwmodel <- function(obj) {
   n_res <- nrow(resource_vars)
   
   allocation_output <- allocation_vars %>%
-    dplyr::mutate(Allocated = lpSolveAPI::get.variables(obj$lpmodel)[1:n_alloc]) %>%
+    dplyr::mutate(Allocated = lpSolveAPI::get.variables(obj$lpmodel)[1:n_alloc])
+  
+  penalty_output <- allocation_output %>% filter(Judge=="U") %>% left_join(obj$penalty_costs) %>% mutate(`Total Penalty Cost` = .data$Allocated * .data$`Penalty Cost`)
+  
+  obj$outputs$penalty_output <- penalty_output
+  
+  allocation_output <- allocation_output %>%
     dplyr::inner_join(obj$variable_costs, by = c("Jurisdiction", "Judge")) %>%
+    dplyr::inner_join(obj$fixed_costs, by = c("Judge" = "Judge Type")) %>%
     dplyr::inner_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
     dplyr::left_join(obj$judge_types, by = c("Judge" = "Judge Type")) %>%
     dplyr::mutate(`Total Sitting Days` = .data$Allocated * .data$`Avg Sitting Days`,
-                  `Total Fee Cost` = .data$`Total Sitting Days` * .data$`Avg Sitting Day Cost`)
+                  `Total Fee Cost` = .data$`Total Sitting Days` * .data$`Avg Sitting Day Cost`,
+                  `Total Sal Cost` = .data$`Allocated` * .data$`Avg Annual Cost`)
   
   # ensure Year, Jurisdiction and Judge variables are factors
   allocation_output$Year <- factor(allocation_output$Year, 
-                                    levels = levels(obj$years$Years))
+                                   levels = levels(obj$years$Years))
   allocation_output$Jurisdiction <- factor(allocation_output$Jurisdiction, 
-                                    levels = levels(obj$jurisdictions$Jurisdiction))
+                                           levels = levels(obj$jurisdictions$Jurisdiction))
   allocation_output$Judge <- factor(allocation_output$Judge, 
                                     levels = levels(obj$judge_types$`Judge Type`))
   
@@ -96,9 +104,9 @@ optimise.jwmodel <- function(obj) {
   
   # ensure Year and Judge variables are factors
   resource_output$Year <- factor(resource_output$Year, 
-                                   levels = levels(obj$years$Years))
+                                 levels = levels(obj$years$Years))
   resource_output$Judge <- factor(resource_output$Judge, 
-                                    levels = levels(obj$judge_types$`Judge Type`))
+                                  levels = levels(obj$judge_types$`Judge Type`))
   
   obj$outputs$resource_output <- resource_output
   
