@@ -170,25 +170,30 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$allocate <- list()
   
-  for (y in levels(obj$years$Years)) {
-    
-    for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
-      
-      indices <- which(df$Year == y & df$Judge == t)
-      coeffs <- df$coeff[indices]
-      
-      indices <- c(indices, 
-                   which(df2$Year == y & df2$Judge == t) + nrow(allocation_vars))
-      coeffs <- c(coeffs, df2$coeff[df2$Year == y & df2$Judge == t])
-      
-      constraint_name <- paste("EQ004-Allocate", as.character(y), as.character(t), sep = "-")
-      
-      # add constraint to jwmodel object in list format
-      constraint <- create_constraint(n_cols, coeffs, indices, "<=", rhs = 0, constraint_name)
-      obj$constraints$allocate <- append(obj$constraints$allocate, list(constraint))
-      
+  for (r in levels(obj$regions$Region)) {
+    for (y in levels(obj$years$Years)) {
+      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+        
+        indices <- which(df$Region == r & df$Year == y & df$Judge == t)
+        coeffs <- df$coeff[indices]
+        
+        indices <- c(
+          indices, 
+          which(df2$Region == r & df2$Year == y & df2$Judge == t) + nrow(allocation_vars)
+        )
+        coeffs <- c(coeffs, df2$coeff[df2$Region == r & df2$Year == y & df2$Judge == t])
+        
+        constraint_name <- paste(
+          "EQ004|Allocate", as.character(r), as.character(y), as.character(t), 
+          sep = "|"
+        )
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, "<=", rhs = 0, constraint_name)
+        obj$constraints$allocate <- append(obj$constraints$allocate, list(constraint))
+        
+      }
     }
-    
   }
   
   ##### EQ-001 In Post Judges constraint #####
