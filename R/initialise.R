@@ -215,37 +215,46 @@ initialise.jwmodel <- function(obj) {
     
     for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
       
-      if (i_year == 1) {
-        # In first year the preceding year is a known constant (the number of
-        # judges currently in post) rather than another variable. This requires
-        # us to rearrange the equation, putting this constant on the RHS.
-        # See Ref EQ-001b
-        indices <- which(resource_vars$Year == y & resource_vars$Judge == t)
-        indices <- indices + n_years * n_jurisdictions * (n_types + 1)
+      for (r in levels(obj$regions$Region)) {
         
-        coeffs <- c(1, -1, 1)
+        if (i_year == 1) {
+          # In first year the preceding year is a known constant (the number of
+          # judges currently in post) rather than another variable. This requires
+          # us to rearrange the equation, putting this constant on the RHS.
+          # See Ref EQ-001b
+          indices <- which(resource_vars$Region == r & resource_vars$Year == y & resource_vars$Judge == t)
+          indices <- indices + nrow(allocation_vars)
+          
+          coeffs <- c(1, -1, 1)
+          
+          RHS <- obj$n_judges$`Number of Judges`[obj$n_judges$`Judge Type` == t & obj$n_judges$Region == r]
+          
+        } else {
+          # Ref EQ-001a
+          indices <- which(
+            resource_vars$Year == y_prev & resource_vars$Region == r & 
+            resource_vars$Judge == t & resource_vars$io == "E"
+            )
+          indices <- c(
+            indices,
+            which(resource_vars$Year == y & resource_vars$Region == r & resource_vars$Judge == t))
+          indices <- indices + nrow(allocation_vars)
+          
+          coeffs <- c(1, -1, 1, -1)
+          
+          RHS <- 0
+        }
         
-        RHS <- obj$n_judges$`Number of Judges`[obj$n_judges$`Judge Type` == t]
+        constraint_name <- paste(
+          "EQ001|InPost", as.character(r), as.character(y), as.character(t), 
+          sep = "|"
+        )
         
-      } else {
-        # Ref EQ-001a
-        indices <- which(resource_vars$Year == y_prev & 
-                           resource_vars$Judge == t & resource_vars$io == "E")
-        indices <- c(indices,
-                     which(resource_vars$Year == y & resource_vars$Judge == t))
-        indices <- indices + n_years * n_jurisdictions * (n_types + 1)
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, "=", RHS, constraint_name)
+        obj$constraints$inpost <- append(obj$constraints$inpost, list(constraint))
         
-        coeffs <- c(1, -1, 1, -1)
-        
-        RHS <- 0
       }
-      
-      constraint_name <- paste("EQ001-InPost", as.character(y), as.character(t), sep = "-")
-      
-      # add constraint to jwmodel object in list format
-      constraint <- create_constraint(n_cols, coeffs, indices, "=", RHS, constraint_name)
-      obj$constraints$inpost <- append(obj$constraints$inpost, list(constraint))
-      
     }
     
   }
