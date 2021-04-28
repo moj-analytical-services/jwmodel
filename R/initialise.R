@@ -337,7 +337,7 @@ initialise.jwmodel <- function(obj) {
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$alloc_limits,
-                     by = c("Judge", "Jurisdiction")) %>%
+                     by = c("Judge", "Jurisdiction", "Region")) %>%
     tidyr::replace_na(list(MaxPct = 0)) %>%
     dplyr::mutate(exclude = dplyr::case_when(
       .data$Judge == "U" ~ FALSE,
