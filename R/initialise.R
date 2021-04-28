@@ -49,11 +49,12 @@ initialise.jwmodel <- function(obj) {
   }
   
   # identify user-selected max recruitment limit scenario (from passed metadata),
-  # default = column 3 in obj$recruit_limits tibble
+  # default = column 4 in obj$recruit_limits tibble
+  # (NB used to be column 3 before we added Region)
   if (is.numeric(obj$metadata$recruit_scenario)) {
-    selected_recruitment_scenario <- obj$metadata$recruit_scenario + 2
+    selected_recruitment_scenario <- obj$metadata$recruit_scenario + 3
   } else {
-    selected_recruitment_scenario <- 3
+    selected_recruitment_scenario <- 4
   }
   
   # generates correctly ordered unique combos of (Region)/Year/Jurisdiction/Judge Type
@@ -412,25 +413,29 @@ initialise.jwmodel <- function(obj) {
   
   obj$constraints$recruitcap <- list()
   
-  for (y in levels(obj$years$Years)) {
-    for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
-      
-      indices <- which(df$Year == y & df$Judge == t) + nrow(allocation_vars)
-      coeffs <- c(0, 1, 0)
-      
-      RHS <- obj$recruit_limits[
-        obj$recruit_limits$`Judge Type` == t &
-          obj$recruit_limits$Year == y,
-        selected_recruitment_scenario    # user-selected, default = column 3 
-      ]
-      RHS <- as.numeric(RHS) 
-      
-      constraint_name <- paste("EQ008-MaxRecruit", as.character(y), as.character(t), sep = "-")
-      
-      # add constraint to jwmodel object in list format
-      constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
-      obj$constraints$recruitcap <- append(obj$constraints$recruitcap, list(constraint))
-      
+  for (r in levels(obj$regions$Region)) {
+    for (y in levels(obj$years$Years)) {
+      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+        
+        indices <- which(df$Region == r & df$Year == y & df$Judge == t) + nrow(allocation_vars)
+        coeffs <- c(0, 1, 0)
+        
+        RHS <- obj$recruit_limits[
+          obj$recruit_limits$`Judge Type` == t & obj$recruit_limits$Region == r &
+            obj$recruit_limits$Year == y,
+          selected_recruitment_scenario    # user-selected, default = column 3 
+        ]
+        RHS <- as.numeric(RHS) 
+        
+        constraint_name <- paste(
+          "EQ008|MaxRecruit", as.character(r), as.character(y), as.character(t), 
+          sep = "|")
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+        obj$constraints$recruitcap <- append(obj$constraints$recruitcap, list(constraint))
+        
+      }
     }
   }
   
