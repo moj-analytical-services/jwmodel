@@ -360,43 +360,50 @@ initialise.jwmodel <- function(obj) {
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$sitting_days, 
-                     by = c("Judge" = "Judge Type", "Year" = "Year")) %>%
-    dplyr::select(.data$Year, .data$Jurisdiction, .data$Judge, coeff = .data$`Avg Sitting Days`) %>%
+                     by = c("Judge" = "Judge Type", "Year", "Region")) %>%
+    dplyr::select(
+      .data$Region, .data$Year, .data$Jurisdiction, .data$Judge, 
+      coeff = .data$`Avg Sitting Days`
+    ) %>%
     dplyr::mutate(coeff = tidyr::replace_na(.data$coeff, 0))
   
   df2 <- resource_vars %>%
-    dplyr::left_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
-    dplyr::select(.data$Year, .data$Judge, .data$io, coeff = .data$`Avg Sitting Days`) %>%
+    dplyr::left_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year", "Region")) %>%
+    dplyr::select(.data$Region, .data$Year, .data$Judge, .data$io, coeff = .data$`Avg Sitting Days`) %>%
     dplyr::mutate(coeff = dplyr::if_else(.data$io == "E", -.data$coeff, 0))
   
   obj$constraints$mindays <- list()
   
-  for (y in levels(obj$years$Years)) {
+  for (r in levels(obj$regions$Region)) {
     
-    for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+    for (y in levels(obj$years$Years)) {
       
-      indices <- which(df$Year == y & df$Judge == t)
-      coeffs <- df$coeff[indices]
-      
-      indices2 <- which(df2$Year == y & df2$Judge == t)
-      coeffs2 <- df2$coeff[indices2]
-      indices2 <- indices2 + n_years * n_jurisdictions * (n_types + 1)
-      
-      constraint_name <- paste("EQ007-MinDays", as.character(y), as.character(t), sep = "-")
-      
-      # add constraint to jwmodel object in list format
-      constraint <- create_constraint(
-        n_cols = n_cols,
-        coeffs = c(coeffs, coeffs2),
-        indices = c(indices, indices2),
-        constraint_type = ">=",
-        rhs = RHS,
-        constraint_name
-      )
-      obj$constraints$mindays <- append(obj$constraints$mindays, list(constraint))
-      
+      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+        
+        indices <- which(df$Region == r & df$Year == y & df$Judge == t)
+        coeffs <- df$coeff[indices]
+        
+        indices2 <- which(df2$Region == r & df2$Year == y & df2$Judge == t)
+        coeffs2 <- df2$coeff[indices2]
+        indices2 <- indices2 + nrow(allocation_vars)
+        
+        constraint_name <- paste(
+          "EQ007|MinDays", as.character(r), as.character(y), as.character(t), 
+          sep = "|")
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(
+          n_cols = n_cols,
+          coeffs = c(coeffs, coeffs2),
+          indices = c(indices, indices2),
+          constraint_type = ">=",
+          rhs = RHS,
+          constraint_name
+        )
+        obj$constraints$mindays <- append(obj$constraints$mindays, list(constraint))
+        
+      }
     }
-    
   }
   
   ##### EQ-008 Constrain the maximum number of Judges recruited in one year #####
