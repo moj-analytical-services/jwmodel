@@ -58,7 +58,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
     wslist <- c("Judge Types", "Jurisdictions", "Years", "Regions",  
                 "Number of Judges", "Expected Departures", "Sitting Day Capacity", 
                 "Baseline Demand", "Fixed Costs", "Variable Costs",
-                "Recruitment Limits", "PerSittingDay")
+                "Recruitment Limits", "PerSittingDay", "Allocation Limits")
   } else {
     # if it's the original Courts model version
     wslist <- c("Judge Types", "Jurisdictions", "Years", "Number of Judges", 
@@ -197,6 +197,9 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$Judge <- factor(df$Judge, levels = judge_levels)
       df$Jurisdiction <- factor(df$Jurisdiction, levels = jurisdiction_levels)
+      if (model_type == "magistrates") {
+        df$Region <- factor(df$Region, levels = region_levels)
+      }
       obj$alloc_limits <<- df
       
     } else if (sheet_name == "PerSittingDay") {
