@@ -266,47 +266,65 @@ initialise.jwmodel <- function(obj) {
   
   df_jp <- obj$judge_progression
   
+  # handles situation where no judge progression criteria are specified
+  # (creates and empty dataset with expected variable names)
+  # TODO consider moving code upstream
+  if (ncol(df_jp) == 0) {
+    df_jp <- dplyr::tibble(
+      "Recruited Into" = character(),
+      "Recruited From" = character(),
+      "Region" = character(),
+      "Proportion" = numeric()
+    )
+  }
+  
   obj$constraints$outgoing <- list()
   
-  for (y in levels(obj$years$Years)) { # for each year
+  for (r in levels(obj$regions$Region)) {
     
-    for (f in head(levels(obj$judge_types$`Judge Type`), -1)) { # for each judge type (from)
+    for (y in levels(obj$years$Years)) { # for each year
       
-      coeffs <- NULL
-      
-      for (i in head(levels(obj$judge_types$`Judge Type`), -1)) { # for each judge type (into)
+      for (f in head(levels(obj$judge_types$`Judge Type`), -1)) { # for each judge type (from)
         
-        i_coeff <- -df_jp$Proportion[df_jp$`Recruited Into` == i & 
-                                       df_jp$`Recruited From` == f]
+        coeffs <- NULL
         
-        if (length(i_coeff) == 0) { i_coeff <- 0 }
-        
-        if (i == f) {
-          o_coeff <- 1
-        } else {
-          o_coeff <- 0
+        for (i in head(levels(obj$judge_types$`Judge Type`), -1)) { # for each judge type (into)
+          
+          i_coeff <- -df_jp$Proportion[
+            df_jp$`Recruited Into` == i & df_jp$`Recruited From` == f &
+              df_jp$Region == r]
+          
+          if (length(i_coeff) == 0) { i_coeff <- 0 }
+          
+          if (i == f) {
+            o_coeff <- 1
+          } else {
+            o_coeff <- 0
+          }
+          
+          coeffs <- c(coeffs,
+                      c(0, i_coeff, o_coeff))
+          
         }
         
-        coeffs <- c(coeffs,
-                    c(0, i_coeff, o_coeff))
+        indices <- which(resource_vars$Year == y & resource_vars$Region == r) + 
+          nrow(allocation_vars)
+        
+        RHS <- obj$judge_departures$`Expected Departures`[
+          obj$judge_departures$`Judge Type` == f &
+            obj$judge_departures$Year == y & obj$judge_departures$Region == r
+          ] 
+        
+        constraint_name <- paste(
+          "EQ003|Outgoing", as.character(r), as.character(y), as.character(f), 
+          sep = "|"
+        )
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, "=", RHS, constraint_name)
+        obj$constraints$outgoing <- append(obj$constraints$outgoing, list(constraint))
         
       }
-      
-      indices <- which(resource_vars$Year == y) + 
-        n_years * n_jurisdictions * (n_types + 1)
-      
-      # TODO refactor for speed? (I think this runs very slowly)
-      RHS <- obj$judge_departures$`Expected Departures`[
-        obj$judge_departures$`Judge Type` == f &
-          obj$judge_departures$Year == y
-        ] 
-      
-      constraint_name <- paste("EQ003-Outgoing", as.character(y), as.character(f), sep = "-")
-      
-      # add constraint to jwmodel object in list format
-      constraint <- create_constraint(n_cols, coeffs, indices, "=", RHS, constraint_name)
-      obj$constraints$outgoing <- append(obj$constraints$outgoing, list(constraint))
-      
     }
     
   }
