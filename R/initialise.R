@@ -184,7 +184,7 @@ initialise.jwmodel <- function(obj) {
       constraint_name <- paste("EQ004-Allocate", as.character(y), as.character(t), sep = "-")
       
       # add constraint to jwmodel object in list format
-      constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+      constraint <- create_constraint(n_cols, coeffs, indices, "<=", rhs = 0, constraint_name)
       obj$constraints$allocate <- append(obj$constraints$allocate, list(constraint))
       
     }
