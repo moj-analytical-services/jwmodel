@@ -240,6 +240,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
     df <- readxl::read_excel(filepath, sheet = "Override Hiring")
     df$Judge <- factor(df$Judge, levels = judge_levels)
     df$Year <- factor(df$Year, levels = year_levels)
+    df$Region <- factor(df$Region, levels = region_levels)
     obj$override_hiring <- df
   }
   

@@ -449,7 +449,6 @@ initialise.jwmodel <- function(obj) {
 
   obj$constraints$demand_ratio <- list()
   
-  # TODO by Region
   for (r in levels(obj$regions$Region)) {
     for (y in levels(obj$years$Years)) {
       for (j in levels(obj$jurisdictions$Jurisdiction)) {
@@ -526,23 +525,29 @@ initialise.jwmodel <- function(obj) {
   obj$constraints$min_hire <- list()
   
   if (!is.null(obj$override_hiring)) {
-    df <- resource_vars %>%
-      dplyr::left_join(obj$override_hiring, by = c("Year", "Judge"))
-    
-    for (y in levels(obj$years$Years)) {
-      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
-        indices <- which(df$Year == y & df$Judge == t) + nrow(allocation_vars)
-        coeffs <- c(0, 1, 0)
-        # RHS = User-defined number hired for this year/judge combo
-        RHS <- df[df$Year == y & df$Judge == t & df$io == "I", 4] 
-        if (is.na(RHS)) {RHS <- 0} # set recruitment to zero if missing
-        
-        constraint_name <- paste("EQ010-MinHire", as.character(y), as.character(t), sep = "-")
-        
-        # add constraint to jwmodel object in list format
-        constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
-        obj$constraints$min_hire <- append(obj$constraints$min_hire, list(constraint))
-        
+    if (nrow(obj$override_hiring) > 0) {
+      df <- resource_vars %>%
+        dplyr::left_join(obj$override_hiring, by = c("Year", "Judge", "Region"))
+      
+      for (r in levels(obj$regions$Region)) {
+        for (y in levels(obj$years$Years)) {
+          for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+            indices <- which(df$Year == y & df$Judge == t & df$Region == r) + nrow(allocation_vars)
+            coeffs <- c(0, 1, 0)
+            # RHS = User-defined number hired for this year/judge combo
+            RHS <- df[df$Year == y & df$Judge == t & df$Region == r & df$io == "I", 5] 
+            if (is.na(RHS)) {RHS <- 0} # set recruitment to zero if missing
+            
+            constraint_name <- paste(
+              "EQ010|MinHire", as.character(r), as.character(y), as.character(t), 
+              sep = "|")
+            
+            # add constraint to jwmodel object in list format
+            constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
+            obj$constraints$min_hire <- append(obj$constraints$min_hire, list(constraint))
+            
+          }
+        }
       }
     }
   }
