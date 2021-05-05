@@ -41,11 +41,12 @@ initialise.jwmodel <- function(obj) {
     (n_regions * n_years * n_types * 3)
   
   # identify user-selected demand scenario (from passed metadata),
-  # default = baseline = 3 (3rd column in 'baseline demand' table)
+  # default = baseline = 4 (4th column in 'baseline demand' table)
+  # (NB used to be column 3 before we added Region)
   if (is.numeric(obj$metadata$demand_scenario)) {
-    selected_demand_scenario <- obj$metadata$demand_scenario + 2
+    selected_demand_scenario <- obj$metadata$demand_scenario + 3
   } else {
-    selected_demand_scenario <- 3
+    selected_demand_scenario <- 4
   }
   
   # identify user-selected max recruitment limit scenario (from passed metadata),
@@ -443,58 +444,71 @@ initialise.jwmodel <- function(obj) {
   
   df <- allocation_vars %>%
     dplyr::left_join(obj$alloc_limits, 
-                     by = c("Judge", "Jurisdiction")) %>%
+                     by = c("Judge", "Jurisdiction", "Region")) %>%
     tidyr::replace_na(list(MinPct = 0, MaxPct = 0))
 
   obj$constraints$demand_ratio <- list()
   
-  for (y in levels(obj$years$Years)) {
-    for (j in levels(obj$jurisdictions$Jurisdiction)) {
-      for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
-  
-        indices <- which(df$Year == y & df$Jurisdiction == j & df$Judge == t)
-        coeffs <- obj$sitting_days[
-          obj$sitting_days$Year == y & obj$sitting_days$`Judge Type` == t,
-          3 # `Avg Sitting Days`
-        ] %>% as.numeric()
-        
-        MinProportion <- df[
-          df$Judge == t & df$Year == y & df$Jurisdiction == j,
-          4 # MinPct
+  # TODO by Region
+  for (r in levels(obj$regions$Region)) {
+    for (y in levels(obj$years$Years)) {
+      for (j in levels(obj$jurisdictions$Jurisdiction)) {
+        for (t in head(levels(obj$judge_types$`Judge Type`), -1)) {
+    
+          indices <- which(df$Year == y & df$Jurisdiction == j & df$Judge == t &
+                             df$Region == r)
+          coeffs <- obj$sitting_days[
+            obj$sitting_days$Year == y & obj$sitting_days$`Judge Type` == t &
+              obj$sitting_days$Region == r,
+            4 # `Avg Sitting Days`
           ] %>% as.numeric()
-        
-        MaxProportion <- df[
-          df$Judge == t & df$Year == y & df$Jurisdiction == j,
-          5 # MinPct
+          
+          MinProportion <- df[
+            df$Judge == t & df$Year == y & df$Jurisdiction == j & 
+              obj$sitting_days$Region == r,
+            5 # MinPct
+            ] %>% as.numeric()
+          
+          MaxProportion <- df[
+            df$Judge == t & df$Year == y & df$Jurisdiction == j &
+              obj$sitting_days$Region == r,
+            6 # MaxPct
+            ] %>% as.numeric()
+          
+          Demand <- obj$demand[
+            obj$demand$Jurisdiction == j & obj$demand$Year == y & obj$demand$Region == r,
+            selected_demand_scenario # dependant on user-selected (baseline = 4)
           ] %>% as.numeric()
-        
-        Demand <- obj$demand[
-          obj$demand$Jurisdiction == j & obj$demand$Year == y,
-          selected_demand_scenario # dependant on user-selected (baseline = 3)
-        ] %>% as.numeric()
-        
-        # apply minimums (EQ-009a)
-        if (MinProportion > 0 & MinProportion <=1 ) {
-          RHS <- c(MinProportion * Demand)
           
-          constraint_name <- paste("EQ009-MinProp", as.character(y), as.character(j), as.character(t), sep = "-")
+          # apply minimums (EQ-009a)
+          if (MinProportion > 0 & MinProportion <=1 ) {
+            RHS <- c(MinProportion * Demand)
+            
+            constraint_name <- paste(
+              "EQ009|MinProp", as.character(r), as.character(y), as.character(j), 
+              as.character(t), 
+              sep = "|")
+            
+            # add constraint to jwmodel object in list format
+            constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
+            obj$constraints$demand_ratio <- append(obj$constraints$demand_ratio, list(constraint))
+            
+          }
           
-          # add constraint to jwmodel object in list format
-          constraint <- create_constraint(n_cols, coeffs, indices, ">=", RHS, constraint_name)
-          obj$constraints$demand_ratio <- append(obj$constraints$demand_ratio, list(constraint))
-          
-        }
-        
-        # apply maximums (EQ-009b)
-        if (MaxProportion > 0 & MaxProportion < 1) {
-          RHS <- c(MaxProportion * Demand)
-          
-          constraint_name <- paste("EQ009-MaxProp", as.character(y), as.character(j), as.character(t), sep = "-")
-          
-          # add constraint to jwmodel object in list format
-          constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
-          obj$constraints$demand_ratio <- append(obj$constraints$demand_ratio, list(constraint))
-          
+          # apply maximums (EQ-009b)
+          if (MaxProportion > 0 & MaxProportion < 1) {
+            RHS <- c(MaxProportion * Demand)
+            
+            constraint_name <- paste(
+              "EQ009|MaxProp", as.character(r), as.character(y), as.character(j), 
+              as.character(t), 
+              sep = "|")
+            
+            # add constraint to jwmodel object in list format
+            constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+            obj$constraints$demand_ratio <- append(obj$constraints$demand_ratio, list(constraint))
+            
+          }
         }
       }
     }
