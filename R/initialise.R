@@ -463,14 +463,12 @@ initialise.jwmodel <- function(obj) {
           ] %>% as.numeric()
           
           MinProportion <- df[
-            df$Judge == t & df$Year == y & df$Jurisdiction == j & 
-              obj$sitting_days$Region == r,
+            df$Judge == t & df$Year == y & df$Jurisdiction == j & df$Region == r,
             5 # MinPct
             ] %>% as.numeric()
           
           MaxProportion <- df[
-            df$Judge == t & df$Year == y & df$Jurisdiction == j &
-              obj$sitting_days$Region == r,
+            df$Judge == t & df$Year == y & df$Jurisdiction == j & df$Region == r,
             6 # MaxPct
             ] %>% as.numeric()
           
