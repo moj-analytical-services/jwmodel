@@ -458,9 +458,26 @@ initialise.jwmodel <- function(obj) {
   ##### EQ-009 Set limits on the proportion of demand allocated to different types of judge #####
   
   df <- allocation_vars %>%
-    dplyr::left_join(obj$alloc_limits, 
-                     by = c("Judge", "Jurisdiction", "Region")) %>%
-    tidyr::replace_na(list(MinPct = 0, MaxPct = 0))
+    dplyr::left_join(
+      obj$sitting_days, 
+      by = c("Judge" = "Judge Type", "Year", "Region")
+    ) %>%
+    dplyr::left_join(
+      obj$alloc_limits, 
+      by = c("Judge", "Jurisdiction", "Region")
+    ) %>%
+    dplyr::left_join(
+      obj$per_sitting_day,
+      by = c("Judge" = "Judge Type", "Year", "Jurisdiction")
+    ) %>%
+    tidyr::replace_na(
+      # default number required per sitting day = 1
+      list(MinPct = 0, MaxPct = 0, `Required Per Sitting Day` = 1)
+    ) %>%
+    dplyr::mutate(
+      # coefficient weighted by number required per sitting day
+      coeff = .data$`Avg Sitting Days` * (1 / .data$`Required Per Sitting Day`)
+    )
 
   obj$constraints$demand_ratio <- list()
   
@@ -471,21 +488,11 @@ initialise.jwmodel <- function(obj) {
     
           indices <- which(df$Year == y & df$Jurisdiction == j & df$Judge == t &
                              df$Region == r)
-          coeffs <- obj$sitting_days[
-            obj$sitting_days$Year == y & obj$sitting_days$`Judge Type` == t &
-              obj$sitting_days$Region == r,
-            4 # `Avg Sitting Days`
-          ] %>% as.numeric()
+          coeffs <- df$coeff[indices]
           
-          MinProportion <- df[
-            df$Judge == t & df$Year == y & df$Jurisdiction == j & df$Region == r,
-            5 # MinPct
-            ] %>% as.numeric()
+          MinProportion <- df$MinPct[indices]
           
-          MaxProportion <- df[
-            df$Judge == t & df$Year == y & df$Jurisdiction == j & df$Region == r,
-            6 # MaxPct
-            ] %>% as.numeric()
+          MaxProportion <- df$MaxPct[indices]
           
           Demand <- obj$demand[
             obj$demand$Jurisdiction == j & obj$demand$Year == y & obj$demand$Region == r,
