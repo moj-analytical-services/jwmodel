@@ -118,14 +118,29 @@ initialise.jwmodel <- function(obj) {
   ##### EQ-002 Demand must be satisfied constraint #####
   # See Ref EQ-002b
   
+  # Mags update note:
+  # The formulation of this constraint needs to be modified to accomodate the
+  # fact that more than one Magistrate (typically) is required to satisfy each
+  # sitting day. On avg 3 are required for each day of demand in Family and 2.8
+  # are required for each day in Crime.
+  # In the model, the allocation numbers are still in units of FTE, but this is
+  # weighted here to accomodate the fact that a Magistrate on their own can only
+  # satisfy 1/3 or 1/2.8 of demand.
+  
   df <- allocation_vars %>%
     dplyr::left_join(
       obj$sitting_days, 
       by = c("Judge" = "Judge Type", "Year", "Region")
     ) %>%
-    dplyr::select(
-      .data$Region, .data$Year, .data$Jurisdiction, .data$Judge, 
-      coeff = .data$`Avg Sitting Days`
+    dplyr::left_join(
+      obj$per_sitting_day,
+      by = c("Judge" = "Judge Type", "Year", "Jurisdiction")
+    ) %>%
+    dplyr::mutate(
+      # default number required per sitting day = 1
+      `Required Per Sitting Day` = tidyr::replace_na(.data$`Required Per Sitting Day`, 1),
+      # coefficient weighted by number required per sitting day
+      coeff = .data$`Avg Sitting Days` * (1 / .data$`Required Per Sitting Day`)
     ) %>%
     dplyr::mutate(coeff = tidyr::replace_na(.data$coeff, 1))
   
