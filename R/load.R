@@ -57,7 +57,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
     # if it's the Magistrate version of the model
     wslist <- c("Judge Types", "Jurisdictions", "Years", "Regions",  
                 "Number of Judges", "Expected Departures", "Sitting Day Capacity", 
-                "Baseline Demand", "Fixed Costs", "Variable Costs",
+                "Baseline Demand", "Judge Progression", "Fixed Costs", "Variable Costs",
                 "Recruitment Limits", "PerSittingDay", "Allocation Limits")
   } else {
     # if it's the original Courts model version
@@ -161,6 +161,10 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$`Recruited Into` <- factor(df$`Recruited Into`, levels = judge_levels)
       df$`Recruited From` <- factor(df$`Recruited From`, levels = judge_levels)
+      if (model_type == "magistrates") {
+        df$Region <- factor(df$Region, levels = region_levels)
+      }
+      df$Proportion <- numeric()
       obj$judge_progression <<- df
       
     } else if (sheet_name == "Fixed Costs") {
