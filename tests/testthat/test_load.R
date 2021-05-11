@@ -12,3 +12,9 @@ test_that("file loads without warnings", {
   expect_silent(myobj <- jwmodel::jwmodel())
   expect_silent(jwmodel::load_from_file(myobj, filepath))
 })
+
+test_that("Mags test file loads without warnings", {
+  filepath <- system.file("extdata", "mags_test_data(v0-7).xlsx", package = "jwmodel")
+  expect_silent(myobj <- jwmodel::jwmodel())
+  expect_silent(jwmodel::load_from_file(myobj, filepath))
+})

@@ -161,12 +161,22 @@ optimise.jwmodel <- function(obj, slack_constraints = FALSE) {
   n_res <- nrow(resource_vars)
   
   allocation_output <- allocation_vars %>%
+    dplyr::left_join(
+      obj$per_sitting_day,
+      by = c("Judge" = "Judge Type", "Jurisdiction", "Year")
+    ) %>%
+    # default number required per sitting day = 1
+    tidyr::replace_na(list(`Required Per Sitting Day` = 1)) %>%
     dplyr::mutate(Allocated = lpSolveAPI::get.variables(lp.wmodel)[1:n_alloc]) %>%
-    dplyr::inner_join(obj$variable_costs, by = c("Jurisdiction", "Judge")) %>%
-    dplyr::inner_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
+    dplyr::inner_join(obj$variable_costs, by = c("Jurisdiction", "Judge", "Region")) %>%
+    dplyr::inner_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year", "Region")) %>%
     dplyr::left_join(obj$judge_types, by = c("Judge" = "Judge Type")) %>%
-    dplyr::mutate(`Total Sitting Days` = .data$Allocated * .data$`Avg Sitting Days`,
-                  `Total Fee Cost` = .data$`Total Sitting Days` * .data$`Avg Sitting Day Cost`)
+    dplyr::mutate(
+      # total number of (demand) sitting days served by allocated resource
+      `Total Sitting Days` = .data$Allocated * .data$`Avg Sitting Days` * (1 / .data$`Required Per Sitting Day`),
+      # total fee cost of all resources used to satisfy demand
+      `Total Fee Cost` = .data$`Total Sitting Days` * .data$`Required Per Sitting Day` * .data$`Avg Sitting Day Cost`
+    )
   
   # ensure Year, Jurisdiction and Judge variables are factors
   allocation_output$Year <- factor(allocation_output$Year, 
@@ -196,6 +206,8 @@ optimise.jwmodel <- function(obj, slack_constraints = FALSE) {
                                     levels = levels(obj$judge_types$`Judge Type`))
   
   obj$outputs$resource_output <- resource_output
+  
+  obj$lpmodel <- lp.wmodel # save model (useful for post-opt diagnostics)
   
   return(obj)
 }

@@ -29,6 +29,18 @@ allocation_vars_template <- function(obj) {
     ) %>%
       dplyr::arrange(.data$Year, .data$Jurisdiction, .data$Judge)
     
+    # if a regional split is specified, expand list to all combinations of:
+    # Region / Year / Jurisdiction / Judge
+    if (!is.null(obj$regions)) {
+      allocation_vars <- tidyr::expand_grid(
+        Region = factor(
+          levels(obj$region$Region), 
+          levels = levels(obj$region$Region)
+        ),
+        allocation_vars
+      )
+    }
+    
     return(allocation_vars)
     
   } else {
@@ -60,6 +72,18 @@ resource_vars_template <- function(obj) {
     ) %>%
       dplyr::arrange(.data$Year, .data$Judge, .data$io) %>%
       dplyr::filter(.data$Judge != "U")
+    
+    # if a regional split is specified, expand list to all combinations of:
+    # Region / Year / Jurisdiction / Judge
+    if (!is.null(obj$regions)) {
+      resource_vars <- tidyr::expand_grid(
+        Region = factor(
+          levels(obj$region$Region), 
+          levels = levels(obj$region$Region)
+        ),
+        resource_vars
+      )
+    }
     
     return(resource_vars)
     
@@ -210,4 +234,13 @@ create_column_names <- function(obj) {
   # return a vector of column names for model variables in the correct order 
   # (excluding any slack variables)
   return(new_col_names$col_name)
+}
+
+
+prepend <- function(input_df, input_value, col_name) {
+  # adds new column before all existing columns, containing value given
+  df <- input_df
+  df[col_name] <- input_value
+  df <- df[,c(ncol(df), 1:ncol(df)-1)]
+  return(df)
 }
