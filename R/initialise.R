@@ -556,7 +556,12 @@ initialise.jwmodel <- function(obj) {
             coeffs <- c(0, 1, 0)
             # RHS = User-defined number hired for this year/judge combo
             RHS <- df[df$Year == y & df$Judge == t & df$Region == r & df$io == "I", 5] 
-            if (is.na(RHS)) {RHS <- 0} # set recruitment to zero if missing
+            if (is.na(RHS)) {
+              # set recruitment to zero if missing
+              RHS <- 0
+            } else {
+              RHS <- as.numeric(RHS)
+            }
             
             constraint_name <- paste(
               "EQ010|MinHire", as.character(r), as.character(y), as.character(t), 
