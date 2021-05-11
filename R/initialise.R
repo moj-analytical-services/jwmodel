@@ -414,7 +414,7 @@ initialise.jwmodel <- function(obj) {
           coeffs = c(coeffs, coeffs2),
           indices = c(indices, indices2),
           constraint_type = ">=",
-          rhs = RHS,
+          rhs = 0,
           constraint_name
         )
         obj$constraints$mindays <- append(obj$constraints$mindays, list(constraint))
