@@ -240,7 +240,9 @@ load_from_file.jwmodel <- function(obj, filepath) {
     df <- readxl::read_excel(filepath, sheet = "Override Hiring")
     df$Judge <- factor(df$Judge, levels = judge_levels)
     df$Year <- factor(df$Year, levels = year_levels)
-    df$Region <- factor(df$Region, levels = region_levels)
+    if (model_type == "magistrates") {
+      df$Region <- factor(df$Region, levels = region_levels)
+    }
     obj$override_hiring <- df
   }
   
@@ -299,6 +301,13 @@ load_from_file.jwmodel <- function(obj, filepath) {
       "Year" = factor(character(), levels = year_levels),
       "Required Per Sitting Day" = numeric()
     )
+    
+    # add "National" region to Override Hiring
+    if (!is.null(obj$override_hiring)) {
+      if (is.null(obj$override_hiring$Region)) {
+        obj$override_hiring <- prepend(obj$override_hiring, national, "Region")
+      }
+    }
   }
   
   return(obj)
