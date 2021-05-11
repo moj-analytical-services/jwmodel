@@ -207,5 +207,7 @@ optimise.jwmodel <- function(obj, slack_constraints = FALSE) {
   
   obj$outputs$resource_output <- resource_output
   
+  obj$lpmodel <- lp.wmodel # save model (useful for post-opt diagnostics)
+  
   return(obj)
 }
