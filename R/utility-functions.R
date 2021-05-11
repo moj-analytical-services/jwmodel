@@ -238,7 +238,9 @@ create_column_names <- function(obj) {
 
 
 prepend <- function(input_df, input_value, col_name) {
+  # adds new column before all existing columns, containing value given
   df <- input_df
   df[col_name] <- input_value
   df <- df[,c(ncol(df), 1:ncol(df)-1)]
+  return(df)
 }
