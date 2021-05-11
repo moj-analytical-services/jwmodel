@@ -246,11 +246,59 @@ load_from_file.jwmodel <- function(obj, filepath) {
   
   # if no Regions defined, treat as if there is one single region "National"
   if (is.null(obj$regions)) {
+    
+    # create "national" region
+    national <- as.factor("National")
+    
     obj$regions <- dplyr::tibble(
       Region = "National",
       Description = "England & Wales"
     )
-    obj$regions$Region <- as.factor(obj$regions$Region)
+    obj$regions$Region <- national
+    
+    # Prepend "National" Region column to all required input dataframes
+    #
+    # "prepend" is a custom function; could use a tibble function but this saves
+    # adding another package dependency and is more certain to work with older
+    # versions of tidyverse
+    
+    # Number of judges
+    obj$n_judges <- prepend(obj$n_judges, national, "Region")
+    
+    # Expected Departures
+    obj$judge_departures <- prepend(obj$judge_departures, national, "Region")
+    
+    # Sitting Day Capacity
+    obj$sitting_days <- prepend(obj$sitting_days, national, "Region")
+    
+    # Baseline Demand
+    obj$demand <- prepend(obj$demand, national, "Region")
+    
+    # Judge Progression (non-Mags only)
+    obj$judge_progression <- prepend(obj$judge_progression, national, "Region")
+    
+    # Fixed Costs
+    obj$fixed_costs <- prepend(obj$fixed_costs, national, "Region")
+    
+    # Variable Costs
+    obj$variable_costs <- prepend(obj$variable_costs, national, "Region")
+    
+    # Recruitment Limits
+    obj$recruit_limits <- prepend(obj$recruit_limits, national, "Region")
+    
+    # Allocation Limits
+    obj$alloc_limits <- prepend(obj$alloc_limits, national, "Region")
+    
+  }
+  
+  if (model_type != "magistrates") {
+    # create empty PerSittingDay (prevents NULL errors downstream)
+    obj$per_sitting_day <- dplyr::tibble(
+      "Judge Type" = factor(character(), levels = judge_levels),
+      "Jurisdiction" = factor(character(), levels = jurisdiction_levels),
+      "Year" = factor(character(), levels = year_levels),
+      "Required Per Sitting Day" = numeric()
+    )
   }
   
   return(obj)
