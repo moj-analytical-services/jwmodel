@@ -168,8 +168,8 @@ optimise.jwmodel <- function(obj, slack_constraints = FALSE) {
     # default number required per sitting day = 1
     tidyr::replace_na(list(`Required Per Sitting Day` = 1)) %>%
     dplyr::mutate(Allocated = lpSolveAPI::get.variables(lp.wmodel)[1:n_alloc]) %>%
-    dplyr::inner_join(obj$variable_costs, by = c("Jurisdiction", "Judge")) %>%
-    dplyr::inner_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year")) %>%
+    dplyr::inner_join(obj$variable_costs, by = c("Jurisdiction", "Judge", "Region")) %>%
+    dplyr::inner_join(obj$sitting_days, by = c("Judge" = "Judge Type", "Year", "Region")) %>%
     dplyr::left_join(obj$judge_types, by = c("Judge" = "Judge Type")) %>%
     dplyr::mutate(
       # total number of (demand) sitting days served by allocated resource
