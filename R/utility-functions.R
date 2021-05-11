@@ -235,3 +235,10 @@ create_column_names <- function(obj) {
   # (excluding any slack variables)
   return(new_col_names$col_name)
 }
+
+
+prepend <- function(input_df, input_value, col_name) {
+  df <- input_df
+  df[col_name] <- input_value
+  df <- df[,c(ncol(df), 1:ncol(df)-1)]
+}
