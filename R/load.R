@@ -164,7 +164,9 @@ load_from_file.jwmodel <- function(obj, filepath) {
       if (model_type == "magistrates") {
         df$Region <- factor(df$Region, levels = region_levels)
       }
-      df$Proportion <- numeric()
+      if (nrow(df)==0) {
+        df$Proportion <- numeric()
+      }
       obj$judge_progression <<- df
       
     } else if (sheet_name == "Fixed Costs") {
