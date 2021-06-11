@@ -1,0 +1,100 @@
+# Defines checks to be applied to data loaded from the 'Expected Departures' worksheet
+# Requires 'validJudges' to be passed as a reference, e.g.
+#
+# confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
+
+rules:
+- expr: '`Expected Departures` >= 0'
+  name: 'MinDepartures'
+  label: 'Minimum number of judges retiring'
+  description: |
+    Check number of judges departing is >= zero
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Expected Departures'
+    errorMessage: |
+      Expected Departures must be >= zero. Please check values entered 
+      in Expected Departures worksheet.
+  
+- expr: 'is_unique(`Judge Type`, Region, Year)'
+  name: 'duplicates'
+  label: 'No duplicate rows'
+  description: |
+    Checks that there are no duplicate combinations of Judge / Region / Year
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Expected Departures'
+    errorMessage: |
+      At least one combination of Judge / Region / Year is duplicated in 
+      the Expected Departures worksheet. Please check worksheet.
+  
+- expr: '`Judge Type` %in% validJudges'
+  name: 'Valid Judges'
+  label: 'Valid Judges'
+  description: |
+    Checks that only valid Judges are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Expected Departures'
+    errorMessage: |
+      At least one row in the Expected Departures worksheet refers to an invalid
+      Judge. Referred-to Judges must be as named in the Judges worksheet.
+      Check for typos.
+  
+- expr: 'Region %in% validRegions'
+  name: 'Valid Regions'
+  label: 'Valid Regions'
+  description: |
+    Checks that only valid Regions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Expected Departures'
+    errorMessage: |
+      At least one row in the Expected Departures worksheet refers to an invalid
+      Region. Referred-to Regions must be as named in the Regions worksheet.
+      Check for typos.
+  
+- expr: 'Year %in% validYears'
+  name: 'Valid Years'
+  label: 'Valid Years'
+  description: |
+    Checks that only valid Years are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Expected Departures'
+    errorMessage: |
+      At least one row in the Expected Departures worksheet refers to an invalid
+      Year. Referred-to Years must be as named in the Years worksheet.
+      Check for typos.
+  
+- expr: 'is_complete(`Judge Type`, Region, Year)'
+  name: 'No Missing Categories'
+  label: 'No Missing Categories'
+  description: |
+    Checks no NAs in Judge, Region or Year field, which would happen if value invalid
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Expected Departures'
+    errorMessage: |
+      At least one row in the Expected Departures worksheet refers to an invalid
+      Judge, Region or Year. These must match those defined in the Judges, Regions
+      and Years worksheets. Check for typos.
+  
+- expr: 'nrow(.) == expectedNRow'
+  name: 'Expected nrow'
+  label: 'Expected number of rows'
+  description: |
+    Checks dataset contains the expected number of rows
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Expected Departures'
+    errorMessage: |
+      The Expected Departures worksheet did not contain the expected number or rows.
+      There should be one row for every combination of Judge / Region / Year.

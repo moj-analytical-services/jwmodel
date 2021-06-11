@@ -43,6 +43,26 @@ check_loaded_data <- function(jw) {
   }
   
   ### judge_departures ----
+  file_path <- system.file("validation_rules", "Expected_Departures.yaml", package = "jwmodel")
+  rules <- validate::validator(.file = file_path)
+  checked <- validate::confront(
+    jw$judge_departures, rules, 
+    ref = list(
+      validJudges = validJudges, 
+      validRegions = validRegions,
+      expectedNRow = length(validJudges) * length(validRegions) * length(validYears)
+    )
+  )
+  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  
+  # append list of (custom) error messages from failed tests, if any
+  if (number_of_tests_failed > 0) {
+    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
+      dplyr::select(worksheet, severity, errorMessage)
+    
+    errors_found <- errors_found %>%
+      dplyr::bind_rows(err_df)
+  }
   
   ### sitting_days ----
   
