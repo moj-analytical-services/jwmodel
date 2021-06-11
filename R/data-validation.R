@@ -50,6 +50,7 @@ check_loaded_data <- function(jw) {
     ref = list(
       validJudges = validJudges, 
       validRegions = validRegions,
+      validYears = validYears,
       expectedNRow = length(validJudges) * length(validRegions) * length(validYears)
     )
   )
@@ -65,6 +66,27 @@ check_loaded_data <- function(jw) {
   }
   
   ### sitting_days ----
+  file_path <- system.file("validation_rules", "Sitting_Day_Capacity.yaml", package = "jwmodel")
+  rules <- validate::validator(.file = file_path)
+  checked <- validate::confront(
+    jw$sitting_days, rules, 
+    ref = list(
+      validJudges = validJudges, 
+      validRegions = validRegions,
+      validYears = validYears,
+      expectedNRow = length(validJudges) * length(validRegions) * length(validYears)
+    )
+  )
+  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  
+  # append list of (custom) error messages from failed tests, if any
+  if (number_of_tests_failed > 0) {
+    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
+      dplyr::select(worksheet, severity, errorMessage)
+    
+    errors_found <- errors_found %>%
+      dplyr::bind_rows(err_df)
+  }
   
   ### demand ----
   
