@@ -89,6 +89,27 @@ check_loaded_data <- function(jw) {
   }
   
   ### demand ----
+  file_path <- system.file("validation_rules", "Baseline_Demand.yaml", package = "jwmodel")
+  rules <- validate::validator(.file = file_path)
+  checked <- validate::confront(
+    jw$demand, rules, 
+    ref = list(
+      validJurisdictions = validJurisdictions, 
+      validRegions = validRegions,
+      validYears = validYears,
+      expectedNRow = length(validJurisdictions) * length(validRegions) * length(validYears)
+    )
+  )
+  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  
+  # append list of (custom) error messages from failed tests, if any
+  if (number_of_tests_failed > 0) {
+    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
+      dplyr::select(worksheet, severity, errorMessage)
+    
+    errors_found <- errors_found %>%
+      dplyr::bind_rows(err_df)
+  }
   
   ### judge_progression ----
   

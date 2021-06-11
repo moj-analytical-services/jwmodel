@@ -1,0 +1,125 @@
+# Defines checks to be applied to data loaded from the 'Baseline Demand' worksheet
+# Requires 'validJudges' to be passed as a reference, e.g.
+#
+# confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
+
+rules:
+  # dynamically selects all scenario cols: 4th column (Baseline) to last column
+- expr: '`:=`(G, var_group(names(.)[4:ncol(.)]))'
+  name: 'V1'
+  label: ''
+  description: ''
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: ''
+  
+- expr: 'G >= 0' # test applied to all scenario columns (selected above)
+  name: 'Sitting Days >=0'
+  label: 'Sitting Day days for all scenarios >= zero'
+  description: |
+    Check Sitting Days are >= zero for Baseline + any defined scenarios
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      Sitting Day demand for all scenarios must be >= zero. Please check 
+      values entered in Baseline Demand worksheet.
+  
+- expr: 'is_unique(Jurisdiction, Region, Year)'
+  name: 'duplicates'
+  label: 'No duplicate rows'
+  description: |
+    Checks that there are no duplicate combinations of Jurisdiction / Region / Year
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      At least one combination of Jurisdiction / Region / Year is duplicated in
+      the Baseline Demand worksheet. Please check worksheet.
+
+- expr: 'Jurisdiction %in% validJurisdictions'
+  name: 'Valid Jurisdictions'
+  label: 'Valid Jurisdictions'
+  description: |
+    Checks that only valid Jurisdictions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      At least one row in the Baseline Demand worksheet refers to an invalid
+      Jurisdiction. Referred-to Jurisdictions must be as named in the Jurisdictions 
+      worksheet. Check for typos.
+
+- expr: 'Region %in% validRegions'
+  name: 'Valid Regions'
+  label: 'Valid Regions'
+  description: |
+    Checks that only valid Regions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      At least one row in the Baseline Demand worksheet refers to an invalid
+      Region. Referred-to Regions must be as named in the Regions worksheet.
+      Check for typos.
+
+- expr: 'Year %in% validYears'
+  name: 'Valid Years'
+  label: 'Valid Years'
+  description: |
+    Checks that only valid Years are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      At least one row in the Baseline Demand worksheet refers to an invalid
+      Year. Referred-to Years must be as named in the Years worksheet.
+      Check for typos.
+
+- expr: 'is_complete(Jurisdiction, Region, Year)'
+  name: 'No Missing Categories'
+  label: 'No Missing Categories'
+  description: |
+    Checks no NAs in Jurisdiction, Region or Year field, which would happen if value invalid
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      At least one row in the Baseline Demand worksheet refers to an invalid
+      Jurisdiction, Region or Year. These must match those defined in the Jurisdictions, 
+      Regions and Years worksheets. Check for typos.
+
+- expr: 'nrow(.) == expectedNRow'
+  name: 'Expected nrow'
+  label: 'Expected number of rows'
+  description: |
+    Checks dataset contains the expected number of rows
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      The Baseline Demand worksheet did not contain the expected number or rows.
+      There should be one row for every combination of Jurisdiction / Region / Year.
+  
+- expr: 'ncol(.) <= 9'
+  name: 'Number of Scenarios'
+  label: 'Not too many scenarios'
+  description: |
+    Checks that not too many scenarios defined. Flags warning rather than error.
+  created: 2021-06-10
+  meta:
+    severity: warning
+    worksheet: 'Baseline Demand'
+    errorMessage: |
+      It looks like you have more than 5 alternative demand scenarios defined.
+      You will still be able to optimise this model, but Supply-Demand charts
+      may not plot all the scenario demand lines nicely.
