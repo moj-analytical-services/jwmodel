@@ -4,7 +4,7 @@
 # confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
 
 rules:
-- expr: `Number of Judges` >= 0
+- expr: '`Number of Judges` >= 0'
   name: 'MinJudges'
   label: 'Minimum number of judges'
   description: |
@@ -17,7 +17,7 @@ rules:
       Number of Judges must be a postive number. Please check values entered 
       in Number of Judges worksheet.
   
-- expr: is_unique(`Judge Type`, Region)
+- expr: 'is_unique(`Judge Type`, Region)'
   name: 'duplicates'
   label: 'No duplicate rows'
   description: |
@@ -30,7 +30,7 @@ rules:
       At least one combination of Judge / Region is duplicated in 
       the Number of Judges worksheet. Please check worksheet.
   
-- expr: `Judge Type` %in% validJudges
+- expr: '`Judge Type` %in% validJudges'
   name: 'Valid Judges'
   label: 'Valid Judges'
   description: |
@@ -44,7 +44,21 @@ rules:
       Judge. Referred-to Judges must be as named in the Judges worksheet.
       Check for typos.
   
-- expr: is_complete(`Judge Type`, Region)
+- expr: 'Region %in% validRegions'
+  name: 'Valid Regions'
+  label: 'Valid Regions'
+  description: |
+    Checks that only valid Regions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Number of Judges'
+    errorMessage: |
+      At least one row in the Number of Judges worksheet refers to an invalid
+      Region. Referred-to Judges must be as named in the Regions worksheet.
+      Check for typos.
+  
+- expr: 'is_complete(`Judge Type`, Region)'
   name: 'No Missing Categories'
   label: 'No Missing Categories'
   description: |
@@ -57,3 +71,16 @@ rules:
       At least one row in the Number of Judges worksheet refers to an invalid
       Judge or Region. These must match those defined in the Judges and Regions
       worksheets. Check for typos.
+  
+- expr: 'nrow(.) == expectedNRow'
+  name: 'Expected nrow'
+  label: 'Expected number of rows'
+  description: |
+    Checks dataset contains the expected number of rows
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Number of Judges'
+    errorMessage: |
+      The Number of Judges worksheet did not contain the expected number or rows.
+      There should be one row for every combination of Judge / Region.

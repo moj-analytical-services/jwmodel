@@ -8,20 +8,29 @@ check_loaded_data <- function(jw) {
   
   # apply checks upon data loaded from each worksheet
   
-  # judge_types
-  
+  ### judge_types ----
   validJudges <- jw$judge_types$`Judge Type` %>% levels() %>% head(-1)
   
-  # jurisdictions
+  ### jurisdictions ----
+  validJurisdictions <- jw$jurisdictions$Jurisdiction %>% levels()
   
-  # years
+  ### years ----
+  validYears <- jw$years$Years %>% levels()
   
-  # regions
+  ### regions ----
+  validRegions <- jw$regions$Region %>% levels()
   
   ### n_judges ----
   file_path <- system.file("validation_rules", "Number_of_Judges.yaml", package = "jwmodel")
   rules <- validate::validator(.file = file_path)
-  checked <- validate::confront(jw$n_judges, rules, ref = list(validJudges = validJudges))
+  checked <- validate::confront(
+    jw$n_judges, rules, 
+    ref = list(
+      validJudges = validJudges, 
+      validRegions = validRegions,
+      expectedNRow = length(validJudges) * length(validRegions)
+    )
+  )
   number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
   
   # append list of (custom) error messages from failed tests, if any
@@ -33,17 +42,17 @@ check_loaded_data <- function(jw) {
       dplyr::bind_rows(err_df)
   }
   
-  # judge_departures
+  ### judge_departures ----
   
-  # sitting_days
+  ### sitting_days ----
   
-  # demand
+  ### demand ----
   
-  # judge_progression
+  ### judge_progression ----
   
-  # recruit_limits
+  ### recruit_limits ----
   
-  #### alloc_limits ----
+  ### alloc_limits ----
   file_path <- system.file("validation_rules", "Allocation_Limits.yaml", package = "jwmodel")
   rules <- validate::validator(.file = file_path)
   checked <- validate::confront(jw$alloc_limits, rules, ref = list(validJudges = validJudges))
