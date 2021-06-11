@@ -1,0 +1,74 @@
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+check_loaded_data <- function(jw) {
+  
+  # create data frame to hold error info
+  errors_found <- data.frame(worksheet = character(), severity = character(),
+                             errorMessage = character())
+  
+  # apply checks upon data loaded from each worksheet
+  
+  # judge_types
+  
+  validJudges <- jw$judge_types$`Judge Type` %>% levels() %>% head(-1)
+  
+  # jurisdictions
+  
+  # years
+  
+  # regions
+  
+  ### n_judges ----
+  file_path <- system.file("validation_rules", "Number_of_Judges.yaml", package = "jwmodel")
+  rules <- validate::validator(.file = file_path)
+  checked <- validate::confront(jw$n_judges, rules, ref = list(validJudges = validJudges))
+  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  
+  # append list of (custom) error messages from failed tests, if any
+  if (number_of_tests_failed > 0) {
+    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
+      dplyr::select(worksheet, severity, errorMessage)
+    
+    errors_found <- errors_found %>%
+      dplyr::bind_rows(err_df)
+  }
+  
+  # judge_departures
+  
+  # sitting_days
+  
+  # demand
+  
+  # judge_progression
+  
+  # recruit_limits
+  
+  #### alloc_limits ----
+  file_path <- system.file("validation_rules", "Allocation_Limits.yaml", package = "jwmodel")
+  rules <- validate::validator(.file = file_path)
+  checked <- validate::confront(jw$alloc_limits, rules, ref = list(validJudges = validJudges))
+  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  
+  # append list of (custom) error messages from failed tests, if any
+  if (number_of_tests_failed > 0) {
+    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
+      dplyr::select(worksheet, severity, errorMessage)
+    
+    errors_found <- errors_found %>%
+      dplyr::bind_rows(err_df)
+  }
+  
+  # fixed_costs
+  
+  # variable_costs
+  
+  # penalty_costs
+  
+  # per_sitting_day
+  
+  # override_hiring
+  
+  
+  # return data frame of errors & warnings from loaded data
+  return(errors_found)
+}
