@@ -10,125 +10,84 @@ check_loaded_data <- function(jw) {
   
   ### judge_types ----
   validJudges <- jw$judge_types$`Judge Type` %>% levels() %>% head(-1)
+  nJudges <- length(validJudges)
   
   ### jurisdictions ----
   validJurisdictions <- jw$jurisdictions$Jurisdiction %>% levels()
+  nJurisdictions <- length(validJurisdictions)
   
   ### years ----
   validYears <- jw$years$Years %>% levels()
+  nYears <- length(validYears)
   
   ### regions ----
   validRegions <- jw$regions$Region %>% levels()
+  nRegions <- length(validRegions)
+  
+  ### Common parameters ----
+  validation_params <- list(
+    validJudges = validJudges, 
+    validJurisdictions = validJurisdictions,
+    validRegions = validRegions,
+    validYears = validYears
+  )
   
   ### n_judges ----
-  file_path <- system.file("validation_rules", "Number_of_Judges.yaml", package = "jwmodel")
-  rules <- validate::validator(.file = file_path)
-  checked <- validate::confront(
-    jw$n_judges, rules, 
-    ref = list(
-      validJudges = validJudges, 
-      validRegions = validRegions,
-      expectedNRow = length(validJudges) * length(validRegions)
-    )
-  )
-  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  validation_params[["expectedNRow"]] <- nJudges * nRegions
   
-  # append list of (custom) error messages from failed tests, if any
-  if (number_of_tests_failed > 0) {
-    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
-      dplyr::select(worksheet, severity, errorMessage)
-    
-    errors_found <- errors_found %>%
-      dplyr::bind_rows(err_df)
-  }
+  errors_found <- apply_validation_checks(
+    rule_file = "Number_of_Judges.yaml",
+    df_to_check = jw$n_judges,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
+  
   
   ### judge_departures ----
-  file_path <- system.file("validation_rules", "Expected_Departures.yaml", package = "jwmodel")
-  rules <- validate::validator(.file = file_path)
-  checked <- validate::confront(
-    jw$judge_departures, rules, 
-    ref = list(
-      validJudges = validJudges, 
-      validRegions = validRegions,
-      validYears = validYears,
-      expectedNRow = length(validJudges) * length(validRegions) * length(validYears)
-    )
-  )
-  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  validation_params[["expectedNRow"]] <- nJudges * nRegions * nYears
   
-  # append list of (custom) error messages from failed tests, if any
-  if (number_of_tests_failed > 0) {
-    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
-      dplyr::select(worksheet, severity, errorMessage)
-    
-    errors_found <- errors_found %>%
-      dplyr::bind_rows(err_df)
-  }
+  errors_found <- apply_validation_checks(
+    rule_file = "Expected_Departures.yaml",
+    df_to_check = jw$judge_departures,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
+  
   
   ### sitting_days ----
-  file_path <- system.file("validation_rules", "Sitting_Day_Capacity.yaml", package = "jwmodel")
-  rules <- validate::validator(.file = file_path)
-  checked <- validate::confront(
-    jw$sitting_days, rules, 
-    ref = list(
-      validJudges = validJudges, 
-      validRegions = validRegions,
-      validYears = validYears,
-      expectedNRow = length(validJudges) * length(validRegions) * length(validYears)
-    )
-  )
-  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  validation_params[["expectedNRow"]] <- nJudges * nRegions * nYears
   
-  # append list of (custom) error messages from failed tests, if any
-  if (number_of_tests_failed > 0) {
-    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
-      dplyr::select(worksheet, severity, errorMessage)
-    
-    errors_found <- errors_found %>%
-      dplyr::bind_rows(err_df)
-  }
+  errors_found <- apply_validation_checks(
+    rule_file = "Sitting_Day_Capacity.yaml",
+    df_to_check = jw$sitting_days,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
   
   ### demand ----
-  file_path <- system.file("validation_rules", "Baseline_Demand.yaml", package = "jwmodel")
-  rules <- validate::validator(.file = file_path)
-  checked <- validate::confront(
-    jw$demand, rules, 
-    ref = list(
-      validJurisdictions = validJurisdictions, 
-      validRegions = validRegions,
-      validYears = validYears,
-      expectedNRow = length(validJurisdictions) * length(validRegions) * length(validYears)
-    )
-  )
-  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  validation_params[["expectedNRow"]] <- nJurisdictions * nRegions * nYears
   
-  # append list of (custom) error messages from failed tests, if any
-  if (number_of_tests_failed > 0) {
-    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
-      dplyr::select(worksheet, severity, errorMessage)
-    
-    errors_found <- errors_found %>%
-      dplyr::bind_rows(err_df)
-  }
+  errors_found <- apply_validation_checks(
+    rule_file = "Baseline_Demand.yaml",
+    df_to_check = jw$demand,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
   
   ### judge_progression ----
+  # TODO
   
   ### recruit_limits ----
   
-  ### alloc_limits ----
-  file_path <- system.file("validation_rules", "Allocation_Limits.yaml", package = "jwmodel")
-  rules <- validate::validator(.file = file_path)
-  checked <- validate::confront(jw$alloc_limits, rules, ref = list(validJudges = validJudges))
-  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
   
-  # append list of (custom) error messages from failed tests, if any
-  if (number_of_tests_failed > 0) {
-    err_df <- validate::meta(rules[which(validate::summary(checked)$fails>0)]) %>% 
-      dplyr::select(worksheet, severity, errorMessage)
-    
-    errors_found <- errors_found %>%
-      dplyr::bind_rows(err_df)
-  }
+  ### alloc_limits ----
+  errors_found <- apply_validation_checks(
+    rule_file = "Allocation_Limits.yaml",
+    df_to_check = jw$alloc_limits,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
+  
   
   # fixed_costs
   
