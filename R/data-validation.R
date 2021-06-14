@@ -78,7 +78,14 @@ check_loaded_data <- function(jw) {
   # TODO
   
   ### recruit_limits ----
+  validation_params[["expectedNRow"]] <- nJudges * nRegions * nYears
   
+  errors_found <- apply_validation_checks(
+    rule_file = "Recruitment_Limits.yaml",
+    df_to_check = jw$recruit_limits,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
   
   ### alloc_limits ----
   errors_found <- apply_validation_checks(
