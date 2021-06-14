@@ -1,0 +1,116 @@
+# Defines checks to be applied to data loaded from the 'Baseline Demand' worksheet
+# Requires 'validJudges' to be passed as a reference, e.g.
+#
+# confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
+
+rules:
+- expr: '`Avg Annual Cost` >= 0'
+  name: 'Fixed Costs >=0'
+  label: 'Fixed Costs must be >= zero'
+  description: |
+    Check Fixed Costs are >= zero
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      Fixed Costs must be >= zero. Please check values entered in 
+      Fixed Costs worksheet.
+  
+- expr: '`Avg Annual Cost` > 20000 | `Avg Annual Cost` == 0'
+  # NB Will not trigger when annual cost equals zero exactly, as this is what 
+  # should be set for fee-paid / non-salaried JOHs
+  name: 'Fixed Costs >=20k'
+  label: 'Sense-check Fixed Costs >= £20k'
+  description: |
+    Check Fixed Costs are >= £20k (or £0)
+  created: 2021-06-10
+  meta:
+    severity: warning
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      Some Judicial Office Holders have been defined with an Avg Annual Cost of
+      less than £20k. If this was intentional, please carry on. If not, please
+      check values entered in the Fixed Costs worksheet.
+  
+- expr: '`Avg Annual Cost` < 1000000'
+  name: 'Fixed Costs <1m'
+  label: 'Sense-check Fixed Costs < £1m'
+  description: |
+    Check Fixed Costs are >= zero
+  created: 2021-06-10
+  meta:
+    severity: warning
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      Some Judicial Office Holders have been defined with an Avg Annual Cost of
+      greater than £1m. If this was intentional, please carry on. If not, please
+      check values entered in the Fixed Costs worksheet.
+  
+- expr: 'is_unique(`Judge Type`, Region)'
+  name: 'duplicates'
+  label: 'No duplicate rows'
+  description: |
+    Checks that there are no duplicate combinations of Judge Type / Region
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      At least one combination of Judge Type / Region is duplicated in
+      the Fixed Costs worksheet. Please check worksheet.
+
+- expr: '`Judge Type` %in% validJudges'
+  name: 'Valid Judges'
+  label: 'Valid Judges'
+  description: |
+    Checks that only valid Judges are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      At least one row in the Fixed Costs worksheet refers to an invalid
+      Judge. Referred-to Judges must be as named in the Judges worksheet. 
+      Check for typos.
+
+- expr: 'Region %in% validRegions'
+  name: 'Valid Regions'
+  label: 'Valid Regions'
+  description: |
+    Checks that only valid Regions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      At least one row in the Fixed Costs worksheet refers to an invalid
+      Region. Referred-to Regions must be as named in the Regions worksheet.
+      Check for typos.
+  
+- expr: 'is_complete(`Judge Type`, Region)'
+  name: 'No Missing Categories'
+  label: 'No Missing Categories'
+  description: |
+    Checks no NAs in Judge Type, Region or Year field, which would happen if value invalid
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      At least one row in the Fixed Costs worksheet refers to an invalid
+      Judge Type, Region or Year. These must match those defined in the Judges, 
+      Regions and Years worksheets. Check for typos.
+
+- expr: 'nrow(.) == expectedNRow'
+  name: 'Expected nrow'
+  label: 'Expected number of rows'
+  description: |
+    Checks dataset contains the expected number of rows
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Fixed Costs'
+    errorMessage: |
+      The Fixed Costs worksheet did not contain the expected number of rows.
+      There should be one row for every combination of Judge Type / Region.

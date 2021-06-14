@@ -97,6 +97,14 @@ check_loaded_data <- function(jw) {
   
   
   # fixed_costs
+  validation_params[["expectedNRow"]] <- nJudges * nRegions
+  
+  errors_found <- apply_validation_checks(
+    rule_file = "Fixed_Costs.yaml",
+    df_to_check = jw$fixed_costs,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
   
   # variable_costs
   
