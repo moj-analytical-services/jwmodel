@@ -135,7 +135,12 @@ check_loaded_data <- function(jw) {
     dplyr::bind_rows(errors_found)
   
   # override_hiring
-  
+  errors_found <- apply_validation_checks(
+    rule_file = "Override_Hiring.yaml",
+    df_to_check = jw$override_hiring,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
   
   # return data frame of errors & warnings from loaded data
   return(errors_found)
