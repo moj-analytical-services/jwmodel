@@ -1,0 +1,102 @@
+# Defines checks to be applied to data loaded from the 'PerSittingDay' worksheet
+# Requires 'validJudges' to be passed as a reference, e.g.
+#
+# confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
+
+rules:
+- expr: '`Required Per Sitting Day` >= 1'
+  name: 'Per Sitting Day >=1'
+  label: 'Per Sitting Day must be >= 1'
+  description: |
+    Check JOHs required per sitting day is at least 1 (one)
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'PerSittingDay'
+    errorMessage: |
+      Where you are defining the avg number of Judicial Office Holders required 
+      per sitting day, this must be at 1 (one). Please check values entered in 
+      PerSittingDay worksheet.
+  
+- expr: '`Required Per Sitting Day` <= 3'
+  name: 'Per Sitting Day <=3'
+  label: 'Sense-check: Per Sitting Day <= 3'
+  description: |
+    Sense-check JOHs required per sitting day is no more than 3 (three)
+  created: 2021-06-10
+  meta:
+    severity: warning
+    worksheet: 'PerSittingDay'
+    errorMessage: |
+      The input sheet specified more than 3 Judicial Office Holders required to 
+      satisfy one sitting day. If this was intentional, please carry on. If not, 
+      please check values entered in PerSittingDay worksheet.
+  
+- expr: 'is_unique(`Judge Type`, Jurisdiction, Year)'
+  name: 'duplicates'
+  label: 'No duplicate rows'
+  description: |
+    Checks that there are no duplicate combinations of Judge / Jurisdiction / Region
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'PerSittingDay'
+    errorMessage: |
+      At least one combination of Judge / Jurisdiction / Region is duplicated in
+      the PerSittingDay worksheet. Please check worksheet.
+
+- expr: '`Judge Type` %in% validJudges'
+  name: 'Valid Judges'
+  label: 'Valid Judges'
+  description: |
+    Checks that only valid Judges are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'PerSittingDay'
+    errorMessage: |
+      At least one row in the PerSittingDay worksheet refers to an invalid
+      Judge. Referred-to Judges must be as named in the Judges worksheet. 
+      Check for typos.
+  
+- expr: 'Jurisdiction %in% validJurisdictions'
+  name: 'Valid Judges'
+  label: 'Valid Judges'
+  description: |
+    Checks that only valid Jurisdictions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'PerSittingDay'
+    errorMessage: |
+      At least one row in the PerSittingDay worksheet refers to an invalid
+      Jurisdiction. Referred-to Jurisdictions must be as named in the Jurisdictions 
+      worksheet. Check for typos.
+  
+- expr: 'Year %in% validYears'
+  name: 'Valid Years'
+  label: 'Valid Years'
+  description: |
+    Checks that only valid Years are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'PerSittingDay'
+    errorMessage: |
+      At least one row in the PerSittingDay worksheet refers to an invalid
+      Year. Referred-to Years must be as named in the Years worksheet.
+      Check for typos.
+  
+- expr: 'is_complete(`Judge Type`, Jurisdiction, Year)'
+  name: 'No Missing Categories'
+  label: 'No Missing Categories'
+  description: |
+    Checks no NAs in Judge, Jurisdiction or Year field, which would happen if value invalid
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'PerSittingDay'
+    errorMessage: |
+      At least one row in the PerSittingDay worksheet refers to an invalid
+      Judge, Jurisdiction or Year. These must match those defined in the Judges, 
+      Jurisdictions and Years worksheets. Check for typos.

@@ -127,6 +127,12 @@ check_loaded_data <- function(jw) {
     dplyr::bind_rows(errors_found)
   
   # per_sitting_day
+  errors_found <- apply_validation_checks(
+    rule_file = "PerSittingDay.yaml",
+    df_to_check = jw$per_sitting_day,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
   
   # override_hiring
   
