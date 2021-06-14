@@ -117,6 +117,14 @@ check_loaded_data <- function(jw) {
     dplyr::bind_rows(errors_found)
   
   # penalty_costs
+  validation_params[["expectedNRow"]] <- nJurisdictions
+  
+  errors_found <- apply_validation_checks(
+    rule_file = "Penalty_Costs.yaml",
+    df_to_check = jw$penalty_costs,
+    params = validation_params
+  ) %>%
+    dplyr::bind_rows(errors_found)
   
   # per_sitting_day
   
