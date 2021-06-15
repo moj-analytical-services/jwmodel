@@ -316,7 +316,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
     }
   }
   
-  load_errors <- check_loaded_data(obj)
+  obj$load_errors <- check_loaded_data(obj)
   
   
   return(obj)
