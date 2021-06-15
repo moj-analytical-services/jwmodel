@@ -69,7 +69,7 @@ rules:
   created: 2021-06-10
   meta:
     severity: error
-    worksheet: 'Penatly Costs'
+    worksheet: 'Penalty Costs'
     errorMessage: |
       The Penalty Costs worksheet did not contain the expected number of rows.
       There should be one row for every Jurisdiction.
