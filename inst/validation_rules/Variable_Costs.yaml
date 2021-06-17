@@ -1,0 +1,114 @@
+# Defines checks to be applied to data loaded from the 'Variable Costs' worksheet
+# Requires 'validJudges' to be passed as a reference, e.g.
+#
+# confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
+
+rules:
+- expr: '`Avg Sitting Day Cost` >= 0'
+  name: 'Variable Costs >=0'
+  label: 'Variable Costs must be >= zero'
+  description: |
+    Check Variable Costs are >= zero
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      Variable Costs must be >= zero. Please check values entered in 
+      Variable Costs worksheet.
+  
+- expr: '`Avg Sitting Day Cost` < 2000'
+  name: 'Variable Costs <2k'
+  label: 'Sense-check Variable Costs < £2k per day'
+  description: |
+    Sense-check Variable Costs are < £2k per day
+  created: 2021-06-10
+  meta:
+    severity: warning
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      Some Judicial Office Holders have been defined with an Avg Sitting Day Cost 
+      of greater than £2k per day. If this was intentional, please carry on. If 
+      not, please check values entered in the Variable Costs worksheet.
+  
+- expr: 'is_unique(Judge, Jurisdiction, Region)'
+  name: 'duplicates'
+  label: 'No duplicate rows'
+  description: |
+    Checks that there are no duplicate combinations of Judge / Jurisdiction / Region
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      At least one combination of Judge / Jurisdiction / Region is duplicated in
+      the Variable Costs worksheet. Please check worksheet.
+
+- expr: 'Judge %in% validJudges'
+  name: 'Valid Judges'
+  label: 'Valid Judges'
+  description: |
+    Checks that only valid Judges are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      At least one row in the Variable Costs worksheet refers to an invalid
+      Judge. Referred-to Judges must be as named in the Judges worksheet. 
+      Check for typos.
+  
+- expr: 'Jurisdiction %in% validJurisdictions'
+  name: 'Valid Judges'
+  label: 'Valid Judges'
+  description: |
+    Checks that only valid Jurisdictions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      At least one row in the Variable Costs worksheet refers to an invalid
+      Jurisdiction. Referred-to Jurisdictions must be as named in the Jurisdictions 
+      worksheet. Check for typos.
+  
+- expr: 'Region %in% validRegions'
+  name: 'Valid Regions'
+  label: 'Valid Regions'
+  description: |
+    Checks that only valid Regions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      At least one row in the Variable Costs worksheet refers to an invalid
+      Region. Referred-to Regions must be as named in the Regions worksheet.
+      Check for typos.
+  
+- expr: 'is_complete(Judge, Jurisdiction, Region)'
+  name: 'No Missing Categories'
+  label: 'No Missing Categories'
+  description: |
+    Checks no NAs in Judge, Jurisdiction or Region field, which would happen if value invalid
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      At least one row in the Variable Costs worksheet refers to an invalid
+      Judge, Jurisdiction or Region. These must match those defined in the Judges, 
+      Jurisdictions and Regions worksheets. Check for typos.
+
+- expr: 'nrow(.) == expectedNRow'
+  name: 'Expected nrow'
+  label: 'Expected number of rows'
+  description: |
+    Checks dataset contains the expected number of rows
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Variable Costs'
+    errorMessage: |
+      The Variable Costs worksheet did not contain the expected number of rows.
+      There should be one row for every combination of Judge / Jurisdiction / Region.

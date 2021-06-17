@@ -1,0 +1,82 @@
+# Defines checks to be applied to data loaded from the 'Allocation Limits' worksheet
+# Requires 'validJudges' to be passed as a reference, e.g.
+#
+# confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
+
+rules:
+- expr: MinPct >= 0
+  name: 'MinPct'
+  label: 'MinPct restriction'
+  description: |
+    MinPct must be greater than or equal to zero
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Allocation Limits'
+    errorMessage: |
+      At least one value in the MinPct column of Allocation Limits is invalid
+  
+- expr: MaxPct <= 1
+  name: 'MaxPct'
+  label: 'MaxPct restriction'
+  description: |
+    MaxPct must be greater than or equal to zero
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Allocation Limits'
+    errorMessage: |
+      At least one value in the MaxPct column of Allocation Limits is invalid
+  
+- expr: MaxPct >= MinPct
+  name: 'MinMax'
+  label: 'MaxPct >= MinPct'
+  description: |
+    MaxPct must be greater than or equal to MinPct
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Allocation Limits'
+    errorMessage: |
+      MinPct exceeds value of MaxPct in at least one row of Allocation Limits
+  
+- expr: is_unique(Judge, Jurisdiction, Region)
+  name: 'duplicates'
+  label: 'No duplicates'
+  description: |
+    Checks that there are no duplicate combinations of Judge / Jursidiction / Region
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Allocation Limits'
+    errorMessage: |
+      At least one combination of Judge / Jusrisdiction / Region is duplicated
+      in Allocation Limits worksheet
+  
+- expr: Judge %in% validJudges
+  name: 'Valid Judges'
+  label: 'Valid Judges'
+  description: |
+    Checks that only valid Judges are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Allocation Limits'
+    errorMessage: |
+      At least one row in the Allocation Limits worksheet refers to an invalid
+      Judge. Referred to Judges must be as named in the Judges worksheet.
+      Check for typos.
+  
+- expr: is_complete(Judge, Region)
+  name: 'No Missing Categories'
+  label: 'No Missing Categories'
+  description: |
+    Checks no NAs in Judge or Region field, which would happen if value invalid
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Allocation Limits'
+    errorMessage: |
+      At least one row in the Allocation Limits worksheet refers to an invalid
+      Judge or Region. These must match those defined in the Judges and Regions
+      worksheets. Check for typos.

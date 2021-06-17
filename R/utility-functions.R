@@ -244,3 +244,30 @@ prepend <- function(input_df, input_value, col_name) {
   df <- df[,c(ncol(df), 1:ncol(df)-1)]
   return(df)
 }
+
+#' @importFrom dplyr %>%
+#' @importFrom rlang .data
+apply_validation_checks <- function(rule_file, df_to_check, params = list()) {
+  
+  file_path <- system.file("validation_rules", rule_file, package = "jwmodel")
+  rules <- validate::validator(.file = file_path)
+  checked <- validate::confront(df_to_check, rules, ref = params)
+  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+  
+  # create dataframe of error messages from failed tests, if any
+  if (number_of_tests_failed > 0) {
+    failed_tests <- which(validate::summary(checked)$fails>0)
+    errors_found <- validate::meta(rules[failed_tests]) %>% 
+      dplyr::select(worksheet, severity, errorMessage)
+  } else {
+    # empty dataset if none
+    errors_found <- data.frame(
+      worksheet = character(), 
+      severity = character(), 
+      errorMessage = character()
+    )
+  }
+  
+  return(errors_found)
+  
+}

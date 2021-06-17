@@ -1,0 +1,75 @@
+# Defines checks to be applied to data loaded from the 'Variable Costs' worksheet
+# Requires 'validJudges' to be passed as a reference, e.g.
+#
+# confront(df, rules, ref = list(validJudges = c('Magistrates', 'DJMC')))
+
+rules:
+- expr: '`Penalty Cost` >= 500'
+  name: 'Penalty Costs >=500'
+  label: 'Penalty Costs must be >= £500'
+  description: |
+    Check Penalty Costs are >= £500 per unmet sitting day
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Penalty Costs'
+    errorMessage: |
+      Penalty Costs have been set at less than £500 per unmet sitting day. The 
+      optimiser should not be run with penalty cost values which are too close to
+      actual judicial costs (and must never be less). Please increase values in 
+      the Penalty Costs worksheet. The recommended values to use arebetween 10x 
+      and 20x average Judicial Office Holder per-sitting-day equivalent costs.
+  
+- expr: 'is_unique(Jurisdiction)'
+  name: 'duplicates'
+  label: 'No duplicate rows'
+  description: |
+    Checks that there are no duplicates of Jurisdiction
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Penalty Costs'
+    errorMessage: |
+      At least one Jurisdiction is duplicated in the Penalty Costs worksheet. 
+      Please check worksheet.
+  
+- expr: 'Jurisdiction %in% validJurisdictions'
+  name: 'Valid Jurisdictions'
+  label: 'Valid Jurisdictions'
+  description: |
+    Checks that only valid Jurisdictions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Penalty Costs'
+    errorMessage: |
+      At least one row in the Penalty Costs worksheet refers to an invalid
+      Jurisdiction. Referred-to Jurisdictions must be as named in the Jurisdictions 
+      worksheet. Check for typos.
+  
+- expr: 'is_complete(Jurisdiction)'
+  name: 'No Missing Categories'
+  label: 'No Missing Categories'
+  description: |
+    Checks no NAs in Jurisdiction field, which would happen if value invalid
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Penalty Costs'
+    errorMessage: |
+      At least one row in the Penalty Costs worksheet refers to an invalid
+      Jurisdiction. Referred-to Jurisdictions must be as named in the Jurisdictions 
+      worksheet. Check for typos.
+
+- expr: 'nrow(.) == expectedNRow'
+  name: 'Expected nrow'
+  label: 'Expected number of rows'
+  description: |
+    Checks dataset contains the expected number of rows
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Penalty Costs'
+    errorMessage: |
+      The Penalty Costs worksheet did not contain the expected number of rows.
+      There should be one row for every Jurisdiction.
