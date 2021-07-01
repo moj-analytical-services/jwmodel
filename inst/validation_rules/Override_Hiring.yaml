@@ -31,11 +31,11 @@ rules:
       as a minimum. If this was intentional, please carry on. If not, please 
       check values entered in Override Hiring worksheet.
   
-- expr: 'is_unique(Judge, Year)'
+- expr: 'is_unique(Judge, Region, Year)'
   name: 'duplicates'
   label: 'No duplicate rows'
   description: |
-    Checks that there are no duplicate combinations of Judge / Year
+    Checks that there are no duplicate combinations of Judge / Region / Year
   created: 2021-06-10
   meta:
     severity: error
@@ -58,6 +58,20 @@ rules:
       Judge. Referred-to Judges must be as named in the Judges worksheet. 
       Check for typos.
   
+- expr: 'Region %in% validRegions'
+  name: 'Valid Regions'
+  label: 'Valid Regions'
+  description: |
+    Checks that only valid Regions are referred to
+  created: 2021-06-10
+  meta:
+    severity: error
+    worksheet: 'Override Hiring'
+    errorMessage: |
+      At least one row in the Override Hiring worksheet refers to an invalid
+      Region. Referred-to Regions must be as named in the Regions worksheet.
+      Check for typos.
+  
 - expr: 'Year %in% validYears'
   name: 'Valid Years'
   label: 'Valid Years'
@@ -72,16 +86,16 @@ rules:
       Year. Referred-to Years must be as named in the Years worksheet.
       Check for typos.
   
-- expr: 'is_complete(Judge, Year)'
+- expr: 'is_complete(Judge, Region, Year)'
   name: 'No Missing Categories'
   label: 'No Missing Categories'
   description: |
-    Checks no NAs in Judge or Year field, which would happen if value invalid
+    Checks no NAs in Judge, Region or Year field, which would happen if value invalid
   created: 2021-06-10
   meta:
     severity: error
     worksheet: 'Override Hiring'
     errorMessage: |
       At least one row in the Override Hiring worksheet refers to an invalid
-      Judge or Year. These must match those defined in the Judges and Years 
-      worksheets. Check for typos.
+      Judge, Region or Year. These must match those defined in the Judges, Regions
+      and Years worksheets. Check for typos.
