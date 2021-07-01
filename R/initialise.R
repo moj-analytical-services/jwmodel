@@ -38,7 +38,12 @@ initialise.jwmodel <- function(obj) {
   }
   
   n_vars <- (n_regions * n_years * n_jurisdictions * (n_types + 1)) +
-    (n_regions * n_years * n_types * 3)
+    (n_regions * n_years * n_types * 3) + 
+    # slack variables for EQ-011 (Allocation smoothing)
+    n_regions * n_years * (n_jurisdictions - 1) * 2
+  
+  
+  EQ_011_penalty_cost <- 1
   
   # identify user-selected demand scenario (from passed metadata),
   # default = baseline = 4 (4th column in 'baseline demand' table)
@@ -109,6 +114,12 @@ initialise.jwmodel <- function(obj) {
   
   # combine coefficients into a single vector in the correct order
   coeffs <- c(f_costs_yjt, s_costs_yt)
+  
+  # append columns for EQ-011 soft constraints, two required for every combo of 
+  # Region, Year and Jurisdiction (excluding last Jurisdiction)
+  n_cols_to_add <- n_regions * n_years * (n_jurisdictions - 1) * 2
+  coeffs <- c(coeffs, rep(EQ_011_penalty_cost, n_cols_to_add))
+  
   n_cols <- length(coeffs)
   indices <- 1:n_cols
   
@@ -573,6 +584,105 @@ initialise.jwmodel <- function(obj) {
             
           }
         }
+      }
+    }
+  }
+  
+  #### EQ-011 Allocation smoothing ####
+  # This adds soft constraints which should make no difference to the hiring profile
+  # recommend, but will affect the allocation of judges between jurisdictions. The
+  # net effect of this should be to allocate judges such that any shortfall in capacity
+  # results in the limited resources being shared equitably between the jurisdictions.
+  # Without this, there is nothing to stop the model from recommending an allocation
+  # which puts the whole shortfall in one jurisdiction.
+  
+  # NB This constraint was NOT present in the original model
+  
+  LU_jurisdictions <- levels(obj$jurisdictions$Jurisdiction)
+  max_J <- length(LU_jurisdictions)
+  
+  df <- allocation_vars %>%
+    dplyr::left_join(
+      obj$sitting_days, 
+      by = c("Judge" = "Judge Type", "Year", "Region")
+    ) %>%
+    dplyr::left_join(
+      obj$per_sitting_day,
+      by = c("Judge" = "Judge Type", "Year", "Jurisdiction")
+    ) %>%
+    dplyr::mutate(
+      # default number required per sitting day = 1
+      `Required Per Sitting Day` = tidyr::replace_na(.data$`Required Per Sitting Day`, 1),
+      # coefficient weighted by number required per sitting day
+      coeff = .data$`Avg Sitting Days` * (1 / .data$`Required Per Sitting Day`)
+    ) %>%
+    dplyr::mutate(coeff = tidyr::replace_na(.data$coeff, 1))
+  
+  obj$constraints$smoothing <- list()
+  
+  i <- nrow(allocation_vars) + nrow(resource_vars)
+  
+  for (r in levels(obj$regions$Region)) {
+    for (y in levels(obj$years$Years)) {
+      for (j in 1:(max_J - 1)) {
+        
+        this_jurisdiction <- LU_jurisdictions[j]
+        next_jurisdiction <- LU_jurisdictions[j+1]
+        
+        indices1 <- which(
+          df$Region == r & df$Year == y & df$Jurisdiction == this_jurisdiction &
+            df$Judge != "U"
+          )
+        coeffs1 <- df$coeff[indices1]
+        
+        indices2 <- which(
+          df$Region == r & df$Year == y & df$Jurisdiction == next_jurisdiction &
+            df$Judge != "U"
+          )
+        coeffs2 <- df$coeff[indices2]
+        
+        RHS_this <- obj$demand[
+          obj$demand$Region == r & obj$demand$Year == y & obj$demand$Jurisdiction == this_jurisdiction,
+          selected_demand_scenario # user selected, default = baseline = 3
+        ] %>% as.numeric()
+        
+        RHS_next <- obj$demand[
+          obj$demand$Region == r & obj$demand$Year == y & obj$demand$Jurisdiction == next_jurisdiction,
+          selected_demand_scenario # user selected, default = baseline = 3
+        ] %>% as.numeric()
+        
+        # First of constraint pair
+        
+        i <- i + 1 # index number of soft constraint variable
+        indices <- c(indices1, indices2, i)
+        coeffs <- c(-coeffs1, coeffs2, -1)
+        
+        RHS <- RHS_next - RHS_this
+        
+        constraint_name <- paste(
+          "EQ011a|AllocSmooth", as.character(r), as.character(y), as.character(this_jurisdiction), 
+          sep = "|")
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+        obj$constraints$smoothing <- append(obj$constraints$smoothing, list(constraint))
+        
+        # Second of constraint pair
+        
+        i <- i + 1 # index number of soft constraint variable
+        indices <- c(indices1, indices2, i)
+        coeffs <- c(coeffs1, -coeffs2, -1)
+        
+        RHS <- RHS_this - RHS_next
+        
+        constraint_name <- paste(
+          "EQ011b|AllocSmooth", as.character(r), as.character(y), as.character(this_jurisdiction), 
+          sep = "|")
+        
+        # add constraint to jwmodel object in list format
+        constraint <- create_constraint(n_cols, coeffs, indices, "<=", RHS, constraint_name)
+        obj$constraints$smoothing <- append(obj$constraints$smoothing, list(constraint))
+        
       }
     }
   }
