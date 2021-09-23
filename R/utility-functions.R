@@ -226,13 +226,18 @@ create_column_names <- function(obj) {
     tidyr::unite(col_name, dplyr::everything(), sep = "|") %>%
     dplyr::mutate(col_name = paste0("Resource|", col_name))
   
+  # add names for slack variables associated with EQ-011 (allocation smoothing)
+  n_cols_added <- nrow(obj$regions) * nrow(obj$years) * (nrow(obj$jurisdictions) - 1) * 2
+  slack_cols <- dplyr::tibble(col_name = paste0("Slack", 1:n_cols_added))
+  
   new_col_names <- dplyr::bind_rows(
     alloc_cols,
     res_cols,
+    slack_cols
   )
   
   # return a vector of column names for model variables in the correct order 
-  # (excluding any slack variables)
+  # (excluding any slack variables other than for EQ-011)
   return(new_col_names$col_name)
 }
 

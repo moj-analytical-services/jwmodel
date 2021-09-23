@@ -99,16 +99,3 @@ rules:
       At least one row in the Variable Costs worksheet refers to an invalid
       Judge, Jurisdiction or Region. These must match those defined in the Judges, 
       Jurisdictions and Regions worksheets. Check for typos.
-
-- expr: 'nrow(.) == expectedNRow'
-  name: 'Expected nrow'
-  label: 'Expected number of rows'
-  description: |
-    Checks dataset contains the expected number of rows
-  created: 2021-06-10
-  meta:
-    severity: error
-    worksheet: 'Variable Costs'
-    errorMessage: |
-      The Variable Costs worksheet did not contain the expected number of rows.
-      There should be one row for every combination of Judge / Jurisdiction / Region.
