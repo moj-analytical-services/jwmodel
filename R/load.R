@@ -44,6 +44,9 @@ load_from_file.jwmodel <- function(obj, filepath) {
     })
   }
   
+  # TRUE if a Regions are defined in the file
+  regions_defined <- c("Regions") %in% sheets_in_file
+  
   # will return "magistrates" if this is a Mags model, anything else including
   # NULL will be assumed to mean this is a regular Courts model
   model_type <- if (!is.null(obj$metadata$type)) {
@@ -85,7 +88,15 @@ load_from_file.jwmodel <- function(obj, filepath) {
   judge_levels <- c()
   jurisdiction_levels <- c()
   year_levels <- c()
-  region_levels <- c()
+  region_levels <- c("National") # default, will be overwritten if Regions defined
+  
+  # load Regions data first if it is defined
+  if (regions_defined) {
+    df <- readxl::read_excel(filepath, sheet = "Regions")
+    region_levels <- unique(df$Region)
+    df$Region <- factor(df$Region, levels = region_levels)
+    obj$regions <- df
+  }
   
   sapply(wslist, function(sheet_name) {
     
@@ -111,7 +122,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       obj$years <<- df
       
     } else if (sheet_name == "Regions") {
-      # load Regions data (only applicable for Magistrates)
+      # load Regions data (only generally applicable for Magistrates)
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       region_levels <<- unique(df$Region)
       df$Region <- factor(df$Region, levels = region_levels)
@@ -121,7 +132,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       # load number of judges initialy employed and available
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$`Judge Type` <- factor(df$`Judge Type`, levels = judge_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$n_judges <<- df
@@ -131,7 +142,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$`Judge Type` <- factor(df$`Judge Type`, levels = judge_levels)
       df$Year <- factor(df$Year, levels = year_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$judge_departures <<- df
@@ -141,7 +152,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$`Judge Type` <- factor(df$`Judge Type`, levels = judge_levels)
       df$Year <- factor(df$Year, levels = year_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$sitting_days <<- df
@@ -151,7 +162,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$Jurisdiction <- factor(df$Jurisdiction, levels = jurisdiction_levels)
       df$Year <- factor(df$Year, levels = year_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$demand <<- df
@@ -161,7 +172,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$`Recruited Into` <- factor(df$`Recruited Into`, levels = judge_levels)
       df$`Recruited From` <- factor(df$`Recruited From`, levels = judge_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       if (nrow(df)==0) {
@@ -173,7 +184,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       # load fixed cost data
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$`Judge Type` <- factor(df$`Judge Type`, levels = judge_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$fixed_costs <<- df
@@ -183,7 +194,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$Judge <- factor(df$Judge, levels = judge_levels)
       df$Jurisdiction <- factor(df$Jurisdiction, levels = jurisdiction_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$variable_costs <<- df
@@ -193,7 +204,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$`Judge Type` <- factor(df$`Judge Type`, levels = judge_levels)
       df$Year <- factor(df$Year, levels = year_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$recruit_limits <<- df
@@ -203,7 +214,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df <- readxl::read_excel(filepath, sheet = sheet_name)
       df$Judge <- factor(df$Judge, levels = judge_levels)
       df$Jurisdiction <- factor(df$Jurisdiction, levels = jurisdiction_levels)
-      if (model_type == "magistrates") {
+      if (regions_defined) {
         df$Region <- factor(df$Region, levels = region_levels)
       }
       obj$alloc_limits <<- df
@@ -246,14 +257,14 @@ load_from_file.jwmodel <- function(obj, filepath) {
     df <- readxl::read_excel(filepath, sheet = "Override Hiring")
     df$Judge <- factor(df$Judge, levels = judge_levels)
     df$Year <- factor(df$Year, levels = year_levels)
-    if (model_type == "magistrates") {
+    if (regions_defined) {
       df$Region <- factor(df$Region, levels = region_levels)
     }
     obj$override_hiring <- df
   }
   
   # if no Regions defined, treat as if there is one single region "National"
-  if (is.null(obj$regions)) {
+  if (!regions_defined) {
     
     # create "national" region
     national <- as.factor("National")
@@ -299,7 +310,7 @@ load_from_file.jwmodel <- function(obj, filepath) {
     
   }
   
-  if (model_type != "magistrates") {
+  if (!(c("PerSittingDay") %in% sheets_in_file)) {
     # create empty PerSittingDay (prevents NULL errors downstream)
     obj$per_sitting_day <- dplyr::tibble(
       "Judge Type" = factor(character(), levels = judge_levels),
@@ -307,10 +318,20 @@ load_from_file.jwmodel <- function(obj, filepath) {
       "Year" = factor(character(), levels = year_levels),
       "Required Per Sitting Day" = numeric()
     )
-    
+  } else if (is.null(obj$per_sitting_day)) {
+    # load PerSittingDay data if it exists
+    # necessary to include here in case non-magistrates model includes the sheet
+    df <- readxl::read_excel(filepath, sheet = "PerSittingDay")
+    df$`Judge Type` <- factor(df$`Judge Type`, levels = judge_levels)
+    df$Jurisdiction <- factor(df$Jurisdiction, levels = jurisdiction_levels)
+    df$Year <- factor(df$Year, levels = year_levels)
+    obj$per_sitting_day <- df
+  }
+  
+  if (!regions_defined) {
     # add "National" region to Override Hiring
     if (!is.null(obj$override_hiring)) {
-      if (is.null(obj$override_hiring$Region)) {
+      if (!("Region" %in% names(obj$override_hiring))) {
         obj$override_hiring <- prepend(obj$override_hiring, national, "Region")
       }
     }
