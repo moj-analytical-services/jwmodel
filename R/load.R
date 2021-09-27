@@ -337,6 +337,27 @@ load_from_file.jwmodel <- function(obj, filepath) {
     }
   }
   
+  # 'Flesh out' Variable Costs to cover every Region/Judge/Jursidiction combo
+  # with 0 (zero) cost for any which were undefined in user input
+  df <- obj$alloc_limits %>%
+    dplyr::select(Region, Judge, Jurisdiction) %>%
+    dplyr::left_join(obj$variable_costs, by = c("Region", "Judge", "Jurisdiction")) %>%
+    tidyr::replace_na(list(`Avg Sitting Day Cost` = 0))
+  
+  obj$variable_costs <- df
+  rm(df) # tidy up (for code hygiene only)
+  
+  # 'Flesh out' Fixed Costs to cover every Region/Judge combo
+  # with 0 (zero) cost for any which were undefined in user input
+  df <- obj$n_judges %>%
+    dplyr::select(Region, `Judge Type`) %>%
+    dplyr::left_join(obj$fixed_costs, by = c("Region", "Judge Type")) %>%
+    tidyr::replace_na(list(`Avg Annual Cost` = 0))
+  
+  obj$fixed_costs <- df
+  rm(df) # tidy up (for code hygiene only)
+  
+  # save copy of any errors (failed data checks)
   obj$load_errors <- check_loaded_data(obj)
   
   
