@@ -261,6 +261,13 @@ load_from_file.jwmodel <- function(obj, filepath) {
       df$Region <- factor(df$Region, levels = region_levels)
     }
     obj$override_hiring <- df
+  } else {
+    # create empty Override Hiring (prevents warnings downstream)
+    obj$override_hiring <- dplyr::tibble(
+      "Judge" = factor(character(), levels = judge_levels),
+      "Year" = factor(character(), levels = year_levels),
+      "Minimum To Hire" = numeric()
+    )
   }
   
   # if no Regions defined, treat as if there is one single region "National"
