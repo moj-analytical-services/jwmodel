@@ -126,19 +126,22 @@ list_of_input_sheets <- function() {
                   "Expected Departures", "Sitting Day Capacity", "Baseline Demand",
                   "Judge Progression", "Fixed Costs", "Variable Costs",
                   "Recruitment Limits", "Allocation Limits", 
-                  "Penalty Costs", "Model Info", "Override Hiring")
+                  "Penalty Costs", "Model Info", "Override Hiring",
+                  "Regions", "PerSittingDay")
   
   listnames <- c("judge_types", "jurisdictions", "years", "n_judges", 
                  "judge_departures", "sitting_days", "demand",
                  "judge_progression", "fixed_costs", "variable_costs",
                  "recruit_limits", "alloc_limits", 
-                 "penalty_costs", "metadata", "override_hiring")
+                 "penalty_costs", "metadata", "override_hiring",
+                 "regions", "per_sitting_day")
   
   mandatory <- c(TRUE, TRUE, TRUE, TRUE, 
                  TRUE, TRUE, TRUE,
                  TRUE, TRUE, TRUE,
                  TRUE, TRUE, 
-                 FALSE, TRUE, FALSE)
+                 FALSE, TRUE, FALSE,
+                 FALSE, FALSE)
   
   lookup <- dplyr::as_tibble(sheetnames) %>%
     dplyr::bind_cols(dplyr::as_tibble(listnames)) %>%
@@ -254,23 +257,36 @@ prepend <- function(input_df, input_value, col_name) {
 #' @importFrom rlang .data
 apply_validation_checks <- function(rule_file, df_to_check, params = list()) {
   
-  file_path <- system.file("validation_rules", rule_file, package = "jwmodel")
-  rules <- validate::validator(.file = file_path)
-  checked <- validate::confront(df_to_check, rules, ref = params)
-  number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
-  
-  # create dataframe of error messages from failed tests, if any
-  if (number_of_tests_failed > 0) {
-    failed_tests <- which(validate::summary(checked)$fails>0)
-    errors_found <- validate::meta(rules[failed_tests]) %>% 
-      dplyr::select(worksheet, severity, errorMessage)
-  } else {
-    # empty dataset if none
+  if (is.null(df_to_check)) {
+    # error trap in case passed-in dataframe is undefined
+    warning(paste0("No data to check for ", rule_file))
+    
     errors_found <- data.frame(
-      worksheet = character(), 
-      severity = character(), 
-      errorMessage = character()
+      worksheet = rule_file,
+      severity = "warning",
+      errorMessage = "No imported data found for this sheet. Only proceed if 
+                      this is as intended."
     )
+    
+  } else {
+    file_path <- system.file("validation_rules", rule_file, package = "jwmodel")
+    rules <- validate::validator(.file = file_path)
+    checked <- validate::confront(df_to_check, rules, ref = params)
+    number_of_tests_failed <- length(which(validate::summary(checked)$fails>0))
+    
+    # create dataframe of error messages from failed tests, if any
+    if (number_of_tests_failed > 0) {
+      failed_tests <- which(validate::summary(checked)$fails>0)
+      errors_found <- validate::meta(rules[failed_tests]) %>% 
+        dplyr::select(worksheet, severity, errorMessage)
+    } else {
+      # empty dataset if none
+      errors_found <- data.frame(
+        worksheet = character(), 
+        severity = character(), 
+        errorMessage = character()
+      )
+    }
   }
   
   return(errors_found)

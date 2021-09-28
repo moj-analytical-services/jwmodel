@@ -18,7 +18,7 @@ test_that("file optimises without warnings", {
 })
 
 test_that("Mags file initialises without warnings", {
-  filepath <- system.file("extdata", "mags_test_data(v0-7).xlsx", package = "jwmodel")
+  filepath <- system.file("extdata", "test_mags_dataset.xlsx", package = "jwmodel")
   myobj <- jwmodel::jwmodel()
   myobj <- jwmodel::load_from_file(myobj, filepath)
   expect_silent(myobj <- jwmodel::initialise(myobj))
