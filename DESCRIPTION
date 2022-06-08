@@ -18,8 +18,7 @@ Imports:
   dplyr,
   tidyr,
   readxl,
-  lpSolveAPI,
-  s3tools
+  lpSolveAPI
 Remotes:
   moj-analytical-services/s3tools
 License: file LICENCE
