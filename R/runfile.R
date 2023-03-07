@@ -5,15 +5,17 @@ library(lpSolveAPI)
 library(janitor)
 
 # Load jwmodel package.
-source("R/jwmodel.R")
-source("R/load.R")
-source("R/utility-functions.R")
-source("R/initialise.R")
-source("R/optimise.R")
+source("R/model/jwmodel.R")
+source("R/model/load.R")
+source("R/model/utility-functions.R")
+source("R/model/initialise.R")
+source("R/model/optimise.R")
 
 # Load pivot table functions.
-source("R/days_sat_yj.R")
-source("R/available_yj.R")
+source("R/outputs/days_sat_yj.R")
+source("R/outputs/available_yj.R")
+source("R/outputs/recruited_yj.R")
+source("R/outputs/departed_yj.R")
 
 # Path to assumptions.
 file <- "data/2022-09-21 Assumptions.xlsx"
@@ -33,6 +35,8 @@ obj <- optimise.jwmodel(obj)
 # Populate jwmodel object with pivot tables.
 obj <- days_sat_yj.jwmodel(obj)
 obj <- available_yj.jwmodel(obj)
+obj <- recruited_yj.jwmodel(obj)
+obj <- departed_yj.jwmodel(obj)
 
 
 

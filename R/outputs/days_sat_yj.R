@@ -1,6 +1,6 @@
 # Compute total sitting days per year for jwmodel object.
 
-source("R/utils.R")
+source("R/outputs/utils.R")
 
 days_sat_yj <- function (obj) {
   UseMethod("days_sat_yj")

@@ -1,6 +1,6 @@
-# Compute Available FTE per year for jwmodel object.
+# Compute available FTE per year for jwmodel object.
 
-source("R/utils.R")
+source("R/outputs/utils.R")
 
 available_yj <- function (obj) {
   UseMethod("available_yj")
@@ -15,7 +15,7 @@ available_yj.jwmodel <- function(obj) {
   ### Model output ###
   resource_output <- as.data.frame(obj$outputs$resource_output)
   
-  ### FTE per judge type/status/year ###
+  ### Available FTE per judge type/status/year ###
   pivot <- resource_output %>%
     dplyr::group_by(Judge, Year) %>%
     
