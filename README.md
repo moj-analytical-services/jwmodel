@@ -17,6 +17,6 @@ The *dev* branch in jwmodel acts as a temporary *master*. Changes on working bra
 The raw outputs from the S&D model are not sent to customers directly. They are imported into Excel, then pivot tables/graphs are produced. 
 We are adding to the jwmodel package so that it produces the desired outputs directly. This will save time as the model is often run several times before the final output is passed to the customer. 
 
-The original jwmodel package (model) is run to get the raw results. The following scripts build the tables/graphs which feed the output for customers:
+The following scripts build the tables/graphs which feed the output for customers:
 
 •	*days_sat_yj.R* – produces a table of total sitting days per year for each judge type.
