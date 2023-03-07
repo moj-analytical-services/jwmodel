@@ -9,7 +9,6 @@ Test link to [Technical Documentation](./docs/tech-guide.md).
 ___
 
 Changes have been made to the jwmodel package to create a more efficient process when it comes to producing model outputs. 
-For more detail on improvements to the S&D model, please refer to [this document](justiceuk.sharepoint.com//APTeam/Shared Documents/General/Modelling_Forecasting/Judicial Workforce/Supply and Demand model/2022 Q4 JCG jw modelling/Review of 2022 Q4 JW Model/Workforce model review 02.03.2023.docx).   
 
 The dev branch in jwmodel acts as a temporary master. Changes on working branches should be pushed to dev and then a pull request is needed to merge dev with master.  dev exists to preserve master until code/file structure has been verified and tested by colleagues. 
 
