@@ -10,7 +10,7 @@ ___
 
 Changes have been made to the jwmodel package to create a more efficient process when it comes to producing model outputs. 
 
-The dev branch in jwmodel acts as a temporary master. Changes on working branches should be pushed to dev and then a pull request is needed to merge dev with master.  dev exists to preserve master until code/file structure has been verified and tested by colleagues. 
+The *dev* branch in jwmodel acts as a temporary *master*. Changes on working branches should be pushed to *dev* and then a pull request is needed to merge *dev* with *master*.  *dev* exists to preserve *master* until code/file structure has been verified and tested. 
 
 ### Outputs 
 
@@ -19,4 +19,4 @@ We are adding to the jwmodel package so that it produces the desired outputs dir
 
 The original jwmodel package (model) is run to get the raw results. The following scripts build the tables/graphs which feed the output for customers:
 
-•	days_sat_yj.R – produces a table of total sitting days per year for each judge type.
+•	*days_sat_yj.R* – produces a table of total sitting days per year for each judge type.
