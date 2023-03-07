@@ -1,6 +1,5 @@
-#########################################################
 # Compute total sitting days per year for jwmodel object.
-#########################################################
+
 source("R/utils.R")
 
 days_sat_yj <- function (obj) {
@@ -15,7 +14,6 @@ days_sat_yj.jwmodel <- function(obj) {
   
   ### Model outputs ###
   allocation_output <- as.data.frame(obj$outputs$allocation_output)
-  resource_output <- as.data.frame(obj$outputs$resource_output)
 
   ### Sitting days per judge type/year ###
   pivot <- allocation_output %>%
@@ -47,7 +45,7 @@ days_sat_yj.jwmodel <- function(obj) {
                      format_numbers)
   
   # Add pivot table to jwmodel object.
-  obj$outputs$total_sitting_days <- pivot
+  obj$outputs$pivots$total_sitting_days <- pivot
   
   return(obj)
   

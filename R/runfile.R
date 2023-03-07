@@ -13,6 +13,7 @@ source("R/optimise.R")
 
 # Load pivot table functions.
 source("R/days_sat_yj.R")
+source("R/available_yj.R")
 
 # Path to assumptions.
 file <- "data/2022-09-21 Assumptions.xlsx"
@@ -31,7 +32,12 @@ obj <- optimise.jwmodel(obj)
 
 # Populate jwmodel object with pivot tables.
 obj <- days_sat_yj.jwmodel(obj)
+obj <- available_yj.jwmodel(obj)
 
+
+
+  
+ 
 
 
   
