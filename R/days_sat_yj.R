@@ -1,6 +1,5 @@
-#########################################################
-# Compute total sitting days per year for jwmodel object.
-#########################################################
+### Compute total sitting days per year for jwmodel object.
+
 source("R/utils.R")
 
 days_sat_yj <- function (obj) {
