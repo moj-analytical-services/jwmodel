@@ -1,3 +1,6 @@
+^renv$
+^renv\.lock$
+^environment\.yml$
 ^jwmodel\.Rproj$
 ^\.Rproj\.user$
 ^packrat/

@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyr)
 library(lpSolveAPI)
 library(janitor)
+library(tidyverse)
 
 # Load jwmodel package.
 source("R/jwmodel.R")
