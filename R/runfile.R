@@ -1,3 +1,7 @@
+# set working directory
+setwd("C:/Users/hnc39o/Desktop/Modelling/code/jwmodel")
+
+# testing git changes setp on DOM1
 
 library(readxl)
 library(openxlsx)
