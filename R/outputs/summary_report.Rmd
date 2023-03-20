@@ -1,0 +1,97 @@
+---
+title: "Judicial Workforce"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
+
+# NOTE: file path below may need to be changed depending on use of AP or local R
+
+source("~/jwmodel/R/runfile.R")
+```
+
+# Tables {.tabset .tabset-pills}
+
+Insert text here
+
+## Available Judges 
+
+Insert text here
+
+```{r, echo = FALSE}
+available_judges <- as.data.frame(obj$outputs$pivots$available_judges)
+
+#pivot table for available judges
+DT::datatable(available_judges, rownames=FALSE, filter="top", class = 'white-space:nowrap', extensions = 'Buttons', options = list(
+  dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+  pageLength=100
+  )
+)
+
+#bar chart for available judges
+obj$outputs$graphs$available_judges
+
+```
+
+
+## Recruited Judges 
+
+
+Insert text here
+
+```{r, echo = FALSE}
+recruited_judges <- as.data.frame(obj$outputs$pivots$recruited_judges)
+
+#pivot table for recruited judges
+DT::datatable(recruited_judges, rownames=FALSE, filter="top", class = 'white-space:nowrap',extensions = 'Buttons', options = list(
+  dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+  pageLength=100
+  )
+)
+
+#bar chart for recruited judges
+obj$outputs$graphs$recruited_judges
+
+```
+
+## Departed Judges
+
+
+Insert text here
+
+```{r, echo = FALSE}
+departed_judges <- as.data.frame(obj$outputs$pivots$departed_judges)
+
+#pivot table for departed judges
+DT::datatable(departed_judges, rownames=FALSE, filter="top", class = 'white-space:nowrap',extensions = 'Buttons', options = list(
+  dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+  pageLength=100
+  )
+)
+
+#bar chart for departed judges
+obj$outputs$graphs$departed_judges
+
+```
+
+## Total Sitting Days
+
+
+Insert text here
+
+```{r, echo = FALSE}
+total_sitting_days <- as.data.frame(obj$outputs$pivots$total_sitting_days)
+
+#pivot table for total sitting days
+DT::datatable(total_sitting_days, rownames=FALSE, filter="top", class = 'white-space:nowrap',extensions = 'Buttons', options = list(
+  dom = 'Bfrtip', buttons = c('copy', 'csv', 'excel', 'pdf', 'print'),
+  pageLength=100
+  )
+)
+
+#bar chart for total sitting days
+obj$outputs$graphs$total_sitting_days
+
+```
