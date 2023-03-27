@@ -1,31 +1,24 @@
+# set working directory on local R
+setwd("C:/Users/hnc39o/Desktop/Modelling/code/jwmodel")
 
-library(readxl)
-library(openxlsx)
-library(dplyr)
-library(tidyr)
-library(lpSolveAPI)
-library(janitor)
-library(ggplot2)
-library(viridis)
-library(rlang)
+#set working directory on the AP
+#setwd("~/jwmodel")
 
-# Load jwmodel package.
-source("R/model/jwmodel.R")
-source("R/model/load.R")
-source("R/model/utility-functions.R")
-source("R/model/initialise.R")
-source("R/model/optimise.R")
+# Load packages
+#renv::status() can be used to check for any packages missing from the snapshot
+source("R/packages.R")
+
+# Load jwmodel package
+purrr::map(dir_ls("R/model", recurse = TRUE, glob = "*.R"), source)
+
 
 # Load pivot table functions.
-source("R/outputs/days_sat_yj.R")
-source("R/outputs/available_yj.R")
-source("R/outputs/recruited_yj.R")
-source("R/outputs/departed_yj.R")
-source("R/outputs/report_xlsx.R")
-# source("R/outputs/utils.R")
+purrr::map(dir_ls("R/outputs", recurse = TRUE, glob = "*.R"), source)
+
 
 # Path to assumptions.
-file <- "data/2022-09-21 Assumptions.xlsx"
+# NOTE: file path below may need to be changed depending on use of AP or local R
+file <- "~/jwmodel/R/2022-09-21 Assumptions Master.xlsx"
 
 # Initialise jwmodel object.
 obj <- jwmodel()
@@ -49,4 +42,5 @@ obj <- departed_yj.jwmodel(obj)
 report_xlsx(obj)
 
 
-
+  
+  
