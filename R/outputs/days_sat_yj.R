@@ -56,8 +56,7 @@ days_sat_yj.jwmodel <- function(obj) {
           dplyr::slice(1:(n() - 1)) %>%
   
           # Collaspe year columns into row values.
-          tidyr::pivot_longer(obj$outputs$pivots$total_sitting_days, 
-                              cols = tidyr::starts_with("202"),
+          tidyr::pivot_longer(cols = tidyr::starts_with("202"),
                               names_to = "Year", 
                               values_to = "Sum of Total Sitting Days") %>%
   

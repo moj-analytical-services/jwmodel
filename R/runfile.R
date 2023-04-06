@@ -1,24 +1,15 @@
-# set working directory on local R
-setwd("C:/Users/hnc39o/Desktop/Modelling/code/jwmodel")
-
-#set working directory on the AP
-#setwd("~/jwmodel")
-
-# Load packages
-#renv::status() can be used to check for any packages missing from the snapshot
+# Load packages.
+renv::status() # checks for any packages missing from the snapshot.
 source("R/packages.R")
 
-# Load jwmodel package
+# Load jwmodel package.
 purrr::map(dir_ls("R/model", recurse = TRUE, glob = "*.R"), source)
-
 
 # Load pivot table functions.
 purrr::map(dir_ls("R/outputs", recurse = TRUE, glob = "*.R"), source)
 
-
-# Path to assumptions.
-# NOTE: file path below may need to be changed depending on use of AP or local R
-file <- "~/jwmodel/R/2022-09-21 Assumptions Master.xlsx"
+# Load data from S3.
+file <- "data/2022-09-21 Assumptions Master.xlsx"
 
 # Initialise jwmodel object.
 obj <- jwmodel()
@@ -41,6 +32,8 @@ obj <- departed_yj.jwmodel(obj)
 # Put pivot tables and graphs into an XLSX file.
 report_xlsx(obj)
 
-
+# Run Rmarkdown report. 
+rmarkdown::render(input = "R/outputs/summary_report.Rmd", 
+                  output_format = "html_document")
   
   

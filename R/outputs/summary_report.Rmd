@@ -8,8 +8,7 @@ output: html_document
 knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = FALSE)
 
 # NOTE: file path below may need to be changed depending on use of AP or local R
-
-source("~/jwmodel/R/runfile.R")
+source("R/runfile.R")
 ```
 
 # Tables {.tabset .tabset-pills}

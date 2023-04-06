@@ -103,7 +103,7 @@ report_xlsx.jwmodel <- function(obj) {
 
   # Save file.
   report <- openxlsx::saveWorkbook(wb, 
-                         file = paste("data/S&D results", strftime(Sys.Date(), format = "%d-%m-%Y"), ".xlsx", sep = ""), 
+                         file = paste("data/S&D results", strftime(Sys.Date(), format = "%d-%m-%Y"), ".xlsx", sep = " "), 
                          overwrite = TRUE)
                          
   return(paste("S&D model results wirrten to  file: data/S&D results ", strftime(Sys.Date(), format = "%d-%m-%Y"), ".xlsx", sep = ""))

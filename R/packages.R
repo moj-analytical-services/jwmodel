@@ -1,4 +1,6 @@
-
+library(renv)
+library(botor)
+library(readxl)
 library(readxl)
 library(openxlsx)
 library(dplyr)
@@ -8,10 +10,7 @@ library(janitor)
 library(ggplot2)
 library(viridis)
 library(rlang)
-
-#packages for the r markdown report:
-#install.packages("DT")
-#install.packages("purrr")
+# Packages for the r markdown report:
 library(DT)
 library(purrr)
 library(fs)
