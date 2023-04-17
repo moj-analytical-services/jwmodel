@@ -6,5 +6,3 @@ You can get the path to your current directory by first running `getwd()`.
 
 Test link to [Technical Documentation](./docs/tech-guide.md).
 
-# Ongoing Development
-The ongoing development of the jw Model is on the dev branch
